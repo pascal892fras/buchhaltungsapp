@@ -252,20 +252,24 @@
         <div class="form-panel-header"><h3 style="margin:0" id="kunde-form-title">Neuer Kunde</h3><button class="btn" onclick="hideKundeForm()">Abbrechen</button></div>
         <input type="hidden" id="k-id">
         <div class="grid2">
+          <div><label>Kundennummer</label><input type="text" id="k-kundennummer" placeholder="z.B. K-001 (automatisch wenn leer)"></div>
           <div><label>Name / Firma</label><input type="text" id="k-name"></div>
-          <div><label>Kontaktperson</label><input type="text" id="k-kontakt"></div>
         </div>
         <div class="grid2">
+          <div><label>Kontaktperson</label><input type="text" id="k-kontakt"></div>
           <div><label>E-Mail</label><input type="email" id="k-mail"></div>
+        </div>
+        <div class="grid2">
           <div><label>Telefon</label><input type="tel" id="k-tel"></div>
+          <div></div>
         </div>
         <label>Adresse (für Rechnungen)</label>
         <textarea id="k-adresse" placeholder="Straße Nr.&#10;PLZ Ort&#10;Land"></textarea>
         <div style="margin-top:12px"><button class="btn btn-primary" onclick="speichernKunde()">Speichern</button></div>
       </div>
       <table>
-        <thead><tr><th>Name</th><th>E-Mail</th><th>Telefon</th><th>Rechnungen</th><th></th></tr></thead>
-        <tbody id="kunden-tbody"><tr><td colspan="5" class="empty">Noch keine Kunden</td></tr></tbody>
+        <thead><tr><th>Kd-Nr.</th><th>Name</th><th>E-Mail</th><th>Telefon</th><th>Rechnungen</th><th></th></tr></thead>
+        <tbody id="kunden-tbody"><tr><td colspan="6" class="empty">Noch keine Kunden</td></tr></tbody>
       </table>
     </div>
 

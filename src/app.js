@@ -424,15 +424,19 @@ function loescheRecur(id){ if(confirm('Vorlage löschen?')){data.wiederkehrend=d
 function showKundeForm(kundeId) {
   document.getElementById('kunde-form').style.display='block';
   document.getElementById('k-id').value = '';
-  ['k-name','k-kontakt','k-mail','k-tel'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('k-adresse').value='';
+  document.getElementById('k-kundennummer').value = '';
+  document.getElementById('k-name').value = '';
+  document.getElementById('k-kontakt').value = '';
+  document.getElementById('k-mail').value = '';
+  document.getElementById('k-tel').value = '';
+  document.getElementById('k-adresse').value = '';
   document.getElementById('kunde-form-title').textContent = 'Neuer Kunde';
 
-  // Wenn kundeId übergeben wurde, Kunde laden (Bearbeiten-Modus)
   if(kundeId) {
     const kunde = data.kunden.find(k => k.id === kundeId);
     if(kunde) {
       document.getElementById('k-id').value = kunde.id;
+      document.getElementById('k-kundennummer').value = kunde.kundennummer || '';
       document.getElementById('k-name').value = kunde.name || '';
       document.getElementById('k-kontakt').value = kunde.kontakt || '';
       document.getElementById('k-mail').value = kunde.mail || '';
@@ -451,13 +455,15 @@ function hideKundeForm() {
 function speichernKunde() {
   const kundeId = document.getElementById('k-id').value;
   const name = document.getElementById('k-name').value;
+  if(!name) { toast('Bitte Namen eingeben'); return; }
 
-  if(!name) {
-    toast('Bitte Namen eingeben');
-    return;
+  let kundennummer = document.getElementById('k-kundennummer').value.trim();
+  if(!kundennummer) {
+    kundennummer = 'K-' + String(data.kunden.length + 1).padStart(3, '0');
   }
 
   const kundeData = {
+    kundennummer: kundennummer,
     name: name,
     kontakt: document.getElementById('k-kontakt').value,
     mail: document.getElementById('k-mail').value,
@@ -466,40 +472,32 @@ function speichernKunde() {
   };
 
   if(kundeId) {
-    // Bearbeiten: Bestehenden Kunden aktualisieren
     const idx = data.kunden.findIndex(k => k.id === kundeId);
     if(idx !== -1) {
       data.kunden[idx] = { ...data.kunden[idx], ...kundeData };
       toast('Kunde aktualisiert');
     }
   } else {
-    // Neu: Neuen Kunden hinzufügen
     data.kunden.push({ id: Date.now().toString(), ...kundeData });
     toast('Kunde gespeichert');
   }
-
-  save();
-  hideKundeForm();
-  renderKunden();
+  save(); hideKundeForm(); renderKunden();
 }
 
 function renderKunden() {
   const tb=document.getElementById('kunden-tbody');
-  if(!data.kunden.length){tb.innerHTML='<tr><td colspan="5" class="empty">Noch keine Kunden</td></tr>';return}
+  if(!data.kunden.length){tb.innerHTML='<tr><td colspan="6" class="empty">Noch keine Kunden</td></tr>';return}
   tb.innerHTML=data.kunden.map(k=>`<tr>
+    <td><strong>${k.kundennummer||'—'}</strong></td>
     <td><strong>${k.name}</strong>${k.kontakt?`<br><span style="font-size:11px;color:var(--muted)">${k.kontakt}</span>`:''}</td>
-    <td>${k.mail||'—'}</td><td>${k.tel||'—'}</td>
+    <td>${k.mail||'—'}</td>
+    <td>${k.tel||'—'}</td>
     <td>${data.rechnungen.filter(r=>r.kundeId==k.id).length}</td>
     <td style="display:flex;gap:4px">
       <button class="btn btn-sm" onclick="showKundeForm('${k.id}')" title="Bearbeiten">✎</button>
       <button class="btn btn-sm btn-danger" onclick="loescheKunde('${k.id}')">✕</button>
     </td>
   </tr>`).join('');
-}
-function loescheKunde(id){ if(confirm('Kunden löschen?')){data.kunden=data.kunden.filter(k=>k.id!=id);save();renderKunden();} }
-function updateKundeSelect(selId) {
-  const s=document.getElementById(selId);
-  s.innerHTML='<option value="">— Kunde wählen —</option>'+data.kunden.map(k=>`<option value="${k.id}">${k.name}</option>`).join('');
 }
 
 // ─── AUSGABEN ────────────────────────────────────────────
@@ -710,150 +708,129 @@ function vorschauTemplate() {
 function druckeDokument(doc, kunde, typ) {
   const s=settings;
   const istAngebot=typ==='Angebot';
-  const pos=doc.positionen.map((p,i)=>`<tr><td style="padding:8px 0;border-bottom:1px solid #ddd">${i+1}.</td><td style="padding:8px 0;border-bottom:1px solid #ddd">${p.beschr}</td><td style="text-align:right;padding:8px 0;border-bottom:1px solid #ddd">${p.menge} Stk</td><td style="text-align:right;padding:8px 0;border-bottom:1px solid #ddd">${Number(p.ep).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td><td style="text-align:right;padding:8px 0;border-bottom:1px solid #ddd">${Number(p.menge*p.ep).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>`).join('');
 
-  // Template-Einstellungen mit Defaults
-  const tplLogoV = s.tpl_logo_pos_v || 'top';
-  const tplLogoH = s.tpl_logo_pos_h || 'right';
+  // Datumsformatierung (YYYY-MM-DD zu DD.MM.YYYY)
+  function formatDatum(d) {
+    if(!d) return '—';
+    const parts = d.split('-');
+    if(parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    return d;
+  }
+
+  const datumFormatiert = formatDatum(doc.datum);
+  const faelligFormatiert = formatDatum(doc.faellig);
+  const lieferdatum = formatDatum(doc.datum);
+
+  // Kundennummer aus Kundenstamm
+  const kundennummer = kunde ? (kunde.kundennummer || '—') : '—';
+
+  // Positionstabelle
+  const pos=doc.positionen.map((p,i)=>`<tr>
+    <td style="padding:10px 8px;border-bottom:1px solid #e0e0e0">${i+1}.</td>
+    <td style="padding:10px 8px;border-bottom:1px solid #e0e0e0">${p.beschr}</td>
+    <td style="text-align:right;padding:10px 8px;border-bottom:1px solid #e0e0e0">${Number(p.menge).toFixed(2).replace('.',',')} Stk</td>
+    <td style="text-align:right;padding:10px 8px;border-bottom:1px solid #e0e0e0">${Number(p.ep).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td>
+    <td style="text-align:right;padding:10px 8px;border-bottom:1px solid #e0e0e0">${Number(p.menge*p.ep).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td>
+  </tr>`).join('');
+
   const tplLogoSize = s.tpl_logo_size || '140';
-  const tplColorHighlight = s.tpl_color_highlight || '#000000';
-  const tplColorText = s.tpl_color_text || '#000000';
-  const tplColorTableBorder = s.tpl_color_table_border || '#000000';
-  const tplColorTableBg = s.tpl_color_table_bg || '#fef9e6';
-  const tplTableStyle = s.tpl_table_style || 'modern';
-  const tplCompanyPos = s.tpl_company_pos || 'top-left';
-  const tplCustomerPos = s.tpl_customer_pos || 'left';
-  const tplBankPos = s.tpl_bank_details_pos || 'footer';
-  const tplIntroText = s.tpl_intro_text || 'Sehr geehrte Damen und Herren,<br><br>vielen Dank für Ihren Auftrag und das damit verbundene Vertrauen!<br>Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:';
   const tplGreeting = s.tpl_greeting || 'Mit freundlichen Grüßen';
+  const tplColorTableBg = s.tpl_color_table_bg || '#f5f5f5';
+  const tplIntroText = s.tpl_intro_text || 'Sehr geehrte Damen und Herren,<br><br>vielen Dank für Ihren Auftrag und das damit verbundene Vertrauen!<br>Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:';
 
-  // Logo-Ausrichtung
-  let logoAlign = 'right';
-  if(tplLogoH === 'left') logoAlign = 'left';
-  else if(tplLogoH === 'center') logoAlign = 'center';
+  const logoImg = logoData ? '<img src="' + logoData + '" style="max-width:' + tplLogoSize + 'px;max-height:80px;object-fit:contain">' : '';
 
-  const logoImg = logoData ? '<img src="' + logoData + '" style="max-width:' + tplLogoSize + 'px;max-height:' + (parseInt(tplLogoSize)*0.5) + 'px;object-fit:contain">' : '';
-
-  // Tabellen-Stil
-  let tableBorderStyle = '1px solid ' + tplColorTableBorder;
-  if(tplTableStyle === 'classic') tableBorderStyle = '2px solid ' + tplColorTableBorder;
-  else if(tplTableStyle === 'minimal') tableBorderStyle = 'none';
-
-  // EPC QR-Code für GiroCode/SEPA-Überweisungen via API (funktioniert offline nicht)
-  let qrCodeImg = '';
-  if (!istAngebot && s.iban) {
-    const betrag = Number(doc.gesamt).toFixed(2);
-    const epcData = `BCD
-002
-1
-SCT
-${s.bic||''}
-${s.kontoinhaber||s.name}
-${s.iban.replace(/\s/g,'')}
-EUR${betrag}
-
-
-Rechnung ${doc.nr}`;
-
-    // QR-Code als Bild via API generieren
-    const qrDataEncoded = encodeURIComponent(epcData);
-    qrCodeImg = `<div class="qr-section"><img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${qrDataEncoded}" width="100" height="100"><br><span style="font-size:7px">Scannen für Überweisung</span></div>`;
-  }
-
-  // Firmen-Infos und Logo je nach Position anordnen
-  let headerContent = '';
-  if(tplCompanyPos === 'top-left') {
-    headerContent = `<div class="header-left">${s.name||'Firmenname'} / ${(s.adresse||'').split('\n')[0]||''} / ${(s.adresse||'').split('\n')[1]||''}</div>`;
-  } else {
-    headerContent = `<div class="header-right" style="text-align:right">${s.name||'Firmenname'} / ${(s.adresse||'').split('\n')[0]||''} / ${(s.adresse||'').split('\n')[1]||''}</div>`;
-  }
-
-  // Kundendaten Position
-  const kundeAlign = tplCustomerPos === 'right' ? 'margin-left:auto;max-width:50%' : '';
+  // Adressen formatieren
+  const kundeAdresse = kunde ? (kunde.adresse || '').split('\n') : [];
+  const firmaAdresse = (s.adresse || '').split('\n');
 
   const html=`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${typ} ${doc.nr}</title><style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:9.5px;color:` + tplColorText + `;padding:50px 60px;background:#fff;line-height:1.4}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
-    .header-left{font-size:8.5px;line-height:1.2;color:` + tplColorText + `;font-weight:600}
-    .header-right{text-align:right}
-    .logo-top{text-align:` + logoAlign + `;margin-bottom:20px}
-    .logo-bottom{text-align:` + logoAlign + `;margin-top:40px}
-    .kunde-block{margin:50px 0 10px 0;` + kundeAlign + `}
-    .kunde-block .line{font-size:8.5px;margin-bottom:2px}
-    .datum-rechts{text-align:right;font-size:8.5px;margin:30px 0 50px 0}
-    .intro{font-size:9px;line-height:1.5;margin:40px 0 30px 0;color:` + tplColorText + `}
-    table{width:100%;border-collapse:collapse;margin:20px 0}
-    th{background:#fff;color:` + tplColorHighlight + `;padding:8px 0;font-size:8.5px;font-weight:700;text-align:left;border-bottom:` + tableBorderStyle + `}
-    th.right{text-align:right}
-    td{padding:8px 0;font-size:9px;color:` + tplColorText + `}
-    .sum-row td{padding:10px 0 4px 0;border-top:` + tableBorderStyle + `}
-    .ust-row{background:` + tplColorTableBg + `}
-    .ust-row td{padding:8px 6px}
-    .total-row td{padding:10px 0;border-top:` + tableBorderStyle + `;border-bottom:` + (tplTableStyle === 'classic' ? '3px' : '2px') + ` solid ` + tplColorTableBorder + `;font-weight:700;font-size:10px;color:` + tplColorHighlight + `}
-    .footer-section{margin-top:40px;font-size:8.5px;line-height:1.6}
-    .qr-section{position:absolute;bottom:50px;left:60px;text-align:center}
-    .page-number{position:absolute;bottom:30px;right:60px;font-size:7px;color:#666}
-    @media print{body{padding:30px 40px}@page{margin:0}}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#333;padding:40px 50px;background:#fff;line-height:1.5}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+    .absender-zeile{font-size:8px;color:#666;border-bottom:1px solid #ccc;padding-bottom:3px}
+    .logo-container{text-align:right}
+    .info-container{display:flex;justify-content:space-between;margin:20px 0}
+    .kunde-adresse{width:50%}
+    .rechnungs-info{width:45%;font-size:9px}
+    .rechnungs-info table{width:100%}
+    .rechnungs-info td{padding:4px 0;vertical-align:top}
+    .rechnungs-info td:first-child{color:#666;width:55%;text-transform:uppercase;font-size:8px}
+    .rechnungs-info td:last-child{text-align:right;color:#0066cc;font-weight:500}
+    .datum-zeile{text-align:right;margin:30px 0 40px 0}
+    .intro{font-size:10px;line-height:1.6;margin-bottom:25px}
+    table.positionen{width:100%;border-collapse:collapse}
+    table.positionen th{background:${tplColorTableBg};padding:10px 8px;font-size:9px;font-weight:600;text-align:left;border-bottom:1px solid #ccc}
+    table.positionen th.right{text-align:right}
+    .summen-block table{width:100%;border-collapse:collapse}
+    .summen-block td{padding:8px;font-size:10px}
+    .summen-block .netto-row td,.summen-block .brutto-row td{background:${tplColorTableBg}}
+    .summen-block .brutto-row td{font-weight:600}
+    .summen-block .ust-row td{font-size:9px;color:#666}
+    .zahlungsinfo{margin-top:30px;font-size:10px;line-height:1.7}
+    .gruss{margin-top:25px;font-size:10px}
+    .page-number{position:fixed;bottom:20px;right:50px;font-size:8px;color:#999}
   </style></head><body>
 
-  ` + (tplLogoV === 'top' && logoImg ? '<div class="logo-top">' + logoImg + '</div>' : '') + `
-
   <div class="header">
-    ` + headerContent + `
+    <div class="absender-zeile">${s.name||'Firmenname'} / ${firmaAdresse[0]||''} / ${firmaAdresse[1]||''}</div>
+    <div class="logo-container">${logoImg}</div>
   </div>
 
-  <div class="kunde-block">
-    <div class="line">${kunde?kunde.name:doc.kunde}</div>
-    <div class="line">${kunde?(kunde.adresse||'').split('\n')[0]:''}</div>
-    <div class="line">Deutschland</div>
+  <div class="info-container">
+    <div class="kunde-adresse">
+      <div>${kunde?kunde.name:doc.kunde}</div>
+      <div>${kundeAdresse[0]||''}</div>
+      <div>${kundeAdresse[1]||''}</div>
+      <div>Deutschland</div>
+    </div>
+    <div class="rechnungs-info">
+      <table>
+        <tr><td>${istAngebot?'Angebots-Nr.':'Rechnungs-Nr.'}</td><td>${doc.nr}</td></tr>
+        <tr><td>${istAngebot?'Angebotsdatum':'Rechnungsdatum'}</td><td>${datumFormatiert}</td></tr>
+        <tr><td>${istAngebot?'Gültig bis':'Lieferdatum'}</td><td>${istAngebot?formatDatum(doc.gueltig):lieferdatum}</td></tr>
+        <tr><td>Ihre Kundennummer</td><td>${kundennummer}</td></tr>
+        <tr><td>Ihr Ansprechpartner</td><td>${s.name||''}${s.mail?'<br>'+s.mail:''}</td></tr>
+      </table>
+    </div>
   </div>
 
-  <div class="datum-rechts">
-    ${doc.datum}
-  </div>
+  <div class="datum-zeile">${datumFormatiert}</div>
 
-  <div class="intro">
-    ` + tplIntroText + `
-  </div>
+  <div class="intro">${tplIntroText}</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width:20px"></th>
-        <th>Beschreibung</th>
-        <th class="right" style="width:70px">Menge</th>
-        <th class="right" style="width:90px">Einzelpreis</th>
-        <th class="right" style="width:90px">Gesamtpreis</th>
-      </tr>
-    </thead>
-    <tbody>` + pos + `<tr class="sum-row">
-        <td colspan="4" style="text-align:right">Gesamtbetrag netto</td>
-        <td style="text-align:right">${Number(doc.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td>
-      </tr>
-      <tr class="ust-row">
-        <td colspan="5" style="text-align:left">Umsatzsteuer nicht erhoben gemäß §19UStG.</td>
-      </tr>
-      <tr class="total-row">
-        <td colspan="4" style="text-align:right">Gesamtbetrag brutto</td>
-        <td style="text-align:right">${Number(doc.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td>
-      </tr>
-    </tbody>
+  <table class="positionen">
+    <thead><tr>
+      <th style="width:30px"></th>
+      <th>Beschreibung</th>
+      <th class="right" style="width:80px">Menge</th>
+      <th class="right" style="width:100px">Einzelpreis</th>
+      <th class="right" style="width:100px">Gesamtpreis</th>
+    </tr></thead>
+    <tbody>${pos}</tbody>
   </table>
 
-  <div class="footer-section">
-    ` + (tplBankPos === 'footer' && s.iban ? 'Zahlungsbedingungen: Zahlung innerhalb von 14 Tagen ab Rechnungseingang ohne Abzüge.<br><br>Bitte überweisen Sie den Rechnungsbetrag unter Angabe der Rechnungsnummer auf folgendes Konto:<br><strong>' + s.bank + '</strong> - IBAN: ' + s.iban + (s.bic ? ' - BIC: ' + s.bic : '') + '<br><br>' : '') + `
-    Der Rechnungsbetrag ist bis zum ${doc.faellig||'—'} fällig.<br><br>
-    ` + tplGreeting + `<br>
-    ${s.name} ${s.mail||''}
+  <div class="summen-block"><table>
+    <tr class="netto-row"><td>Gesamtbetrag netto</td><td style="text-align:right">${Number(doc.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>
+    <tr class="ust-row"><td colspan="2">Umsatzsteuer nicht erhoben gemäß §19UStG.</td></tr>
+    <tr class="brutto-row"><td>Gesamtbetrag brutto</td><td style="text-align:right">${Number(doc.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>
+  </table></div>
+
+  <div class="zahlungsinfo">
+    ${!istAngebot && s.iban ? `<p><strong>Zahlungsbedingungen:</strong> Zahlung innerhalb von ${s.zahltage||14} Tagen ab Rechnungseingang ohne Abzüge.</p>
+    <p>Bitte überweisen Sie den Rechnungsbetrag unter Angabe der Rechnungsnummer auf das unten angegebene Konto.<br>Der Rechnungsbetrag ist bis zum ${faelligFormatiert} fällig.</p>` : ''}
   </div>
 
-  ` + (tplLogoV === 'bottom' && logoImg ? '<div class="logo-bottom">' + logoImg + '</div>' : '') + `
-  ` + qrCodeImg + `
+  <div class="gruss">${tplGreeting}<br>${s.name||''} ${s.mail||''}</div>
+
+  ${!istAngebot && s.iban ? `<div style="margin-top:30px;padding-top:15px;border-top:1px solid #ddd;font-size:9px;color:#666">
+    <strong>Bankverbindung:</strong> ${s.bank||''} | IBAN: ${s.iban} ${s.bic?'| BIC: '+s.bic:''} | Kontoinhaber: ${s.kontoinhaber||s.name}
+  </div>` : ''}
+
   <div class="page-number">1/1</div>
   </body></html>`;
-  const filename=`${typ}_${doc.nr.replace(/[^a-zA-Z0-9-]/g,'_')}.pdf`;
-  window.api.printPDF(html, filename);
+
+  window.api.printPDF(html, `${typ}_${doc.nr.replace(/[^a-zA-Z0-9-]/g,'_')}.pdf`);
 }
 
 // ─── CSV EXPORT ──────────────────────────────────────────

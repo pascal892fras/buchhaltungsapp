@@ -5,6 +5,7 @@ const fs = require('fs');
 const DATA_PATH = path.join(app.getPath('userData'), 'buchhaltung_data.json');
 const SETTINGS_PATH = path.join(app.getPath('userData'), 'buchhaltung_settings.json');
 const LOGO_PATH = path.join(app.getPath('userData'), 'buchhaltung_logo.txt');
+const BACKUP_DIR = path.join(app.getPath('userData'), 'backups');
 
 function loadJSON(p, fallback) {
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
@@ -12,6 +13,35 @@ function loadJSON(p, fallback) {
 }
 function saveJSON(p, data) {
   fs.writeFileSync(p, JSON.stringify(data, null, 2), 'utf8');
+}
+
+// Backup-Funktion: Erstellt automatische Backups
+function createBackup() {
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+
+    if (fs.existsSync(DATA_PATH)) {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const backupPath = path.join(BACKUP_DIR, `buchhaltung_data_${timestamp}.json`);
+      fs.copyFileSync(DATA_PATH, backupPath);
+
+      // Alte Backups löschen (behalte nur die letzten 10)
+      const backups = fs.readdirSync(BACKUP_DIR)
+        .filter(f => f.startsWith('buchhaltung_data_'))
+        .sort()
+        .reverse();
+
+      if (backups.length > 10) {
+        backups.slice(10).forEach(f => {
+          fs.unlinkSync(path.join(BACKUP_DIR, f));
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Backup-Fehler:', err);
+  }
 }
 
 let win;
@@ -41,7 +71,11 @@ app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) creat
 
 // IPC Handlers
 ipcMain.handle('load-data', () => loadJSON(DATA_PATH, { kunden: [], rechnungen: [], ausgaben: [], angebote: [], wiederkehrend: [] }));
-ipcMain.handle('save-data', (_, data) => { saveJSON(DATA_PATH, data); return true; });
+ipcMain.handle('save-data', (_, data) => {
+  createBackup(); // Erstelle Backup vor dem Speichern
+  saveJSON(DATA_PATH, data);
+  return true;
+});
 ipcMain.handle('load-settings', () => loadJSON(SETTINGS_PATH, {}));
 ipcMain.handle('save-settings', (_, s) => { saveJSON(SETTINGS_PATH, s); return true; });
 
