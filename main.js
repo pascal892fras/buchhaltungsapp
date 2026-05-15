@@ -118,6 +118,21 @@ ipcMain.handle('print-pdf', async (_, htmlContent, filename) => {
   try {
     await tmpWin.loadFile(tmpHtmlPath);
 
+    // Warte, bis alle Bilder (inkl. externer QR-Code) geladen sind
+    await tmpWin.webContents.executeJavaScript(`
+      new Promise(resolve => {
+        const imgs = Array.from(document.images);
+        if (imgs.length === 0) return resolve();
+        let pending = imgs.length;
+        const done = () => { if (--pending <= 0) resolve(); };
+        imgs.forEach(img => {
+          if (img.complete) done();
+          else { img.addEventListener('load', done); img.addEventListener('error', done); }
+        });
+        setTimeout(resolve, 8000);
+      });
+    `);
+
     const { filePath } = await dialog.showSaveDialog(win, {
       title: 'PDF speichern',
       defaultPath: filename,

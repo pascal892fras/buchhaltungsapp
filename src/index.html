@@ -313,6 +313,13 @@
           <div style="font-size:11px;color:var(--hint);margin-top:4px">Empfohlene Größe: 200x80px (max. 5MB)</div>
         </div>
 
+        <h3 style="margin-top:16px">Darstellung</h3>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="s-darkmode" style="width:auto;margin:0" onchange="toggleDarkmode(this.checked)">
+          <span>Dark Mode aktivieren</span>
+        </label>
+        <div style="font-size:11px;color:var(--hint);margin-top:2px">Dunkles Farbschema für die gesamte App</div>
+
         <h3 style="margin-top:16px">Rechnungseinstellungen</h3>
         <div class="grid2">
           <div><label>Rechnungsprefix</label><input type="text" id="s-prefix" value="RE" style="width:100px"></div>
@@ -355,6 +362,13 @@
           <span style="font-size:11px;color:var(--hint);margin-left:8px">Empfohlen: 100-200px</span>
         </div>
 
+        <h4 style="margin-top:16px;font-size:13px">QR-Code (GiroCode)</h4>
+        <div>
+          <label>QR-Code Größe (px)</label>
+          <input type="number" id="s-tpl-qr-size" value="120" min="60" max="300" style="width:100px">
+          <span style="font-size:11px;color:var(--hint);margin-left:8px">Erscheint nur bei Rechnungen mit IBAN. Empfohlen: 100-150px</span>
+        </div>
+
         <h4 style="margin-top:16px;font-size:13px">Farben</h4>
         <div class="grid2">
           <div>
@@ -375,6 +389,13 @@
             <label>Tabellen-Hintergrund (USt-Zeile)</label>
             <input type="color" id="s-tpl-color-table-bg" value="#fef9e6">
           </div>
+        </div>
+        <div class="grid2">
+          <div>
+            <label>PDF-Hintergrundfarbe (Rechnung/Angebot)</label>
+            <input type="color" id="s-tpl-color-bg" value="#ffffff">
+          </div>
+          <div></div>
         </div>
 
         <h4 style="margin-top:16px;font-size:13px">Tabellen-Design</h4>

@@ -4,14 +4,18 @@ let settings = {
   name:'', beruf:'', adresse:'', tel:'', mail:'', web:'', steuernr:'', bank:'', kontoinhaber:'', iban:'', bic:'', zahltage:14, prefix:'RE', angprefix:'ANG',
   fussnote:'Gemäß §19 UStG wird keine Umsatzsteuer ausgewiesen.',
   angfussnote:'Dieses Angebot ist freibleibend und unverbindlich. Preise in Euro, netto gemäß §19 UStG.',
+  // App-Darstellung
+  darkmode: false,
   // Template-Einstellungen
   tpl_logo_pos_v: 'top', // top oder bottom
   tpl_logo_pos_h: 'right', // left, center, right
   tpl_logo_size: '140', // Logo Breite in px
+  tpl_qr_size: '120', // QR-Code Größe in px
   tpl_color_highlight: '#000000', // Farbe für Überschriften/hervorgehobene Elemente
   tpl_color_text: '#000000', // Textfarbe
   tpl_color_table_border: '#000000', // Tabellen-Rahmenfarbe
   tpl_color_table_bg: '#fef9e6', // Tabellen-Hintergrundfarbe (USt-Zeile)
+  tpl_color_bg: '#ffffff', // PDF-Hintergrundfarbe (Rechnung/Angebot)
   tpl_company_pos: 'top-left', // top-left, top-right
   tpl_customer_pos: 'left', // left, right
   tpl_intro_text: 'Sehr geehrte Damen und Herren,<br><br>vielen Dank für Ihren Auftrag und das damit verbundene Vertrauen!<br>Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:',
@@ -30,6 +34,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     if(!data.wiederkehrend) data.wiederkehrend=[];
     const s = await window.api.loadSettings();
     if(s && Object.keys(s).length) Object.assign(settings, s);
+
+    // Theme sofort anwenden, bevor die UI gerendert wird
+    applyDarkmode(settings.darkmode === true);
 
     // Migration: Logo aus settings in separate Datei verschieben
     if(settings.logo) {
@@ -564,19 +571,39 @@ function resetUpload(){
   document.getElementById('ai-status').style.display='none';
 }
 
+// ─── DARSTELLUNG / DARKMODE ──────────────────────────────
+function applyDarkmode(enabled) {
+  if(enabled) document.documentElement.setAttribute('data-theme', 'dark');
+  else document.documentElement.removeAttribute('data-theme');
+}
+async function toggleDarkmode(enabled) {
+  settings.darkmode = !!enabled;
+  applyDarkmode(settings.darkmode);
+  await window.api.saveSettings(settings);
+}
+
 // ─── EINSTELLUNGEN ───────────────────────────────────────
 async function speichernSettings() {
   ['name','beruf','adresse','tel','mail','web','steuernr','bank','kontoinhaber','iban','bic','fussnote','angfussnote','prefix','angprefix'].forEach(k=>{const el=document.getElementById('s-'+k);if(el)settings[k]=el.value;});
   settings.zahltage=parseInt(document.getElementById('s-zahltage').value)||14;
 
+  // Darstellung
+  const darkEl = document.getElementById('s-darkmode');
+  if(darkEl) {
+    settings.darkmode = darkEl.checked;
+    applyDarkmode(settings.darkmode);
+  }
+
   // Template-Einstellungen speichern
   settings.tpl_logo_pos_v = document.getElementById('s-tpl-logo-pos-v').value;
   settings.tpl_logo_pos_h = document.getElementById('s-tpl-logo-pos-h').value;
   settings.tpl_logo_size = document.getElementById('s-tpl-logo-size').value;
+  settings.tpl_qr_size = document.getElementById('s-tpl-qr-size').value;
   settings.tpl_color_highlight = document.getElementById('s-tpl-color-highlight').value;
   settings.tpl_color_text = document.getElementById('s-tpl-color-text').value;
   settings.tpl_color_table_border = document.getElementById('s-tpl-color-table-border').value;
   settings.tpl_color_table_bg = document.getElementById('s-tpl-color-table-bg').value;
+  settings.tpl_color_bg = document.getElementById('s-tpl-color-bg').value;
   settings.tpl_table_style = document.getElementById('s-tpl-table-style').value;
   settings.tpl_company_pos = document.getElementById('s-tpl-company-pos').value;
   settings.tpl_customer_pos = document.getElementById('s-tpl-customer-pos').value;
@@ -592,14 +619,20 @@ async function ladeSettings() {
   ['name','beruf','adresse','tel','mail','web','steuernr','bank','kontoinhaber','iban','bic','fussnote','angfussnote','prefix','angprefix'].forEach(k=>{const el=document.getElementById('s-'+k);if(el&&settings[k]!==undefined)el.value=settings[k];});
   if(settings.zahltage) document.getElementById('s-zahltage').value=settings.zahltage;
 
+  // Darstellung
+  const darkEl = document.getElementById('s-darkmode');
+  if(darkEl) darkEl.checked = settings.darkmode === true;
+
   // Template-Einstellungen laden
   if(settings.tpl_logo_pos_v) document.getElementById('s-tpl-logo-pos-v').value = settings.tpl_logo_pos_v;
   if(settings.tpl_logo_pos_h) document.getElementById('s-tpl-logo-pos-h').value = settings.tpl_logo_pos_h;
   if(settings.tpl_logo_size) document.getElementById('s-tpl-logo-size').value = settings.tpl_logo_size;
+  if(settings.tpl_qr_size) document.getElementById('s-tpl-qr-size').value = settings.tpl_qr_size;
   if(settings.tpl_color_highlight) document.getElementById('s-tpl-color-highlight').value = settings.tpl_color_highlight;
   if(settings.tpl_color_text) document.getElementById('s-tpl-color-text').value = settings.tpl_color_text;
   if(settings.tpl_color_table_border) document.getElementById('s-tpl-color-table-border').value = settings.tpl_color_table_border;
   if(settings.tpl_color_table_bg) document.getElementById('s-tpl-color-table-bg').value = settings.tpl_color_table_bg;
+  if(settings.tpl_color_bg) document.getElementById('s-tpl-color-bg').value = settings.tpl_color_bg;
   if(settings.tpl_table_style) document.getElementById('s-tpl-table-style').value = settings.tpl_table_style;
   if(settings.tpl_company_pos) document.getElementById('s-tpl-company-pos').value = settings.tpl_company_pos;
   if(settings.tpl_customer_pos) document.getElementById('s-tpl-customer-pos').value = settings.tpl_customer_pos;
@@ -720,71 +753,93 @@ function druckeDokument(doc, kunde, typ) {
   const datumFormatiert = formatDatum(doc.datum);
   const faelligFormatiert = formatDatum(doc.faellig);
   const lieferdatum = formatDatum(doc.datum);
-
-  // Kundennummer aus Kundenstamm
   const kundennummer = kunde ? (kunde.kundennummer || '—') : '—';
+
+  // Template-Einstellungen mit Defaults
+  const tplLogoV = s.tpl_logo_pos_v || 'top';
+  const tplLogoH = s.tpl_logo_pos_h || 'right';
+  const tplLogoSize = s.tpl_logo_size || '140';
+  const tplQrSize = parseInt(s.tpl_qr_size, 10) || 120;
+  const tplColorHighlight = s.tpl_color_highlight || '#000000';
+  const tplColorText = s.tpl_color_text || '#333333';
+  const tplColorTableBorder = s.tpl_color_table_border || '#e0e0e0';
+  const tplColorTableBg = s.tpl_color_table_bg || '#fef9e6';
+  const tplColorBg = s.tpl_color_bg || '#ffffff';
+  const tplTableStyle = s.tpl_table_style || 'modern';
+  const tplCompanyPos = s.tpl_company_pos || 'top-left';
+  const tplCustomerPos = s.tpl_customer_pos || 'left';
+  const tplBankPos = s.tpl_bank_details_pos || 'footer';
+  const tplIntroText = s.tpl_intro_text || 'Sehr geehrte Damen und Herren,<br><br>vielen Dank für Ihren Auftrag und das damit verbundene Vertrauen!<br>Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:';
+  const tplGreeting = s.tpl_greeting || 'Mit freundlichen Grüßen';
+
+  // Tabellen-Stil → Rahmen
+  let rowBorder, headerBorder;
+  if(tplTableStyle === 'classic') {
+    rowBorder = '2px solid ' + tplColorTableBorder;
+    headerBorder = '2px solid ' + tplColorTableBorder;
+  } else if(tplTableStyle === 'minimal') {
+    rowBorder = 'none';
+    headerBorder = '1px solid ' + tplColorTableBorder;
+  } else {
+    rowBorder = '1px solid ' + tplColorTableBorder;
+    headerBorder = '1px solid ' + tplColorTableBorder;
+  }
 
   // Positionstabelle
   const pos=doc.positionen.map((p,i)=>`<tr>
-    <td style="padding:10px 8px;border-bottom:1px solid #e0e0e0">${i+1}.</td>
-    <td style="padding:10px 8px;border-bottom:1px solid #e0e0e0">${p.beschr}</td>
-    <td style="text-align:right;padding:10px 8px;border-bottom:1px solid #e0e0e0">${Number(p.menge).toFixed(2).replace('.',',')} Stk</td>
-    <td style="text-align:right;padding:10px 8px;border-bottom:1px solid #e0e0e0">${Number(p.ep).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td>
-    <td style="text-align:right;padding:10px 8px;border-bottom:1px solid #e0e0e0">${Number(p.menge*p.ep).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td>
+    <td style="padding:10px 8px;border-bottom:${rowBorder};color:${tplColorText}">${i+1}.</td>
+    <td style="padding:10px 8px;border-bottom:${rowBorder};color:${tplColorText}">${p.beschr}</td>
+    <td style="text-align:right;padding:10px 8px;border-bottom:${rowBorder};color:${tplColorText}">${Number(p.menge).toFixed(2).replace('.',',')} Stk</td>
+    <td style="text-align:right;padding:10px 8px;border-bottom:${rowBorder};color:${tplColorText}">${Number(p.ep).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td>
+    <td style="text-align:right;padding:10px 8px;border-bottom:${rowBorder};color:${tplColorText}">${Number(p.menge*p.ep).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td>
   </tr>`).join('');
 
-  const tplLogoSize = s.tpl_logo_size || '140';
-  const tplGreeting = s.tpl_greeting || 'Mit freundlichen Grüßen';
-  const tplColorTableBg = s.tpl_color_table_bg || '#f5f5f5';
-  const tplIntroText = s.tpl_intro_text || 'Sehr geehrte Damen und Herren,<br><br>vielen Dank für Ihren Auftrag und das damit verbundene Vertrauen!<br>Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:';
+  // Logo-Ausrichtung
+  let logoAlign = 'right';
+  if(tplLogoH === 'left') logoAlign = 'left';
+  else if(tplLogoH === 'center') logoAlign = 'center';
 
   const logoImg = logoData ? '<img src="' + logoData + '" style="max-width:' + tplLogoSize + 'px;max-height:80px;object-fit:contain">' : '';
 
-  // Adressen formatieren
+  // EPC-QR-Code (GiroCode) für SEPA-Überweisungen – abhängig von Rechnungssumme + IBAN
+  let qrCodeHtml = '';
+  if (!istAngebot && s.iban) {
+    const betrag = Number(doc.gesamt).toFixed(2);
+    const epcData = `BCD
+002
+1
+SCT
+${s.bic||''}
+${s.kontoinhaber||s.name||''}
+${s.iban.replace(/\s/g,'')}
+EUR${betrag}
+
+
+Rechnung ${doc.nr}`;
+    const qrDataEncoded = encodeURIComponent(epcData);
+    qrCodeHtml = `<div class="qr-section">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=${tplQrSize}x${tplQrSize}&data=${qrDataEncoded}" width="${tplQrSize}" height="${tplQrSize}" alt="GiroCode" onerror="this.style.display='none'">
+      <div style="font-size:8px;color:#666;margin-top:4px">Scannen für Überweisung</div>
+      <div style="font-size:8px;color:#666">${Number(doc.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</div>
+    </div>`;
+  }
+
+  // Adressen
   const kundeAdresse = kunde ? (kunde.adresse || '').split('\n') : [];
   const firmaAdresse = (s.adresse || '').split('\n');
 
-  const html=`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${typ} ${doc.nr}</title><style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#333;padding:40px 50px;background:#fff;line-height:1.5}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-    .absender-zeile{font-size:8px;color:#666;border-bottom:1px solid #ccc;padding-bottom:3px}
-    .logo-container{text-align:right}
-    .info-container{display:flex;justify-content:space-between;margin:20px 0}
-    .kunde-adresse{width:50%}
-    .rechnungs-info{width:45%;font-size:9px}
-    .rechnungs-info table{width:100%}
-    .rechnungs-info td{padding:4px 0;vertical-align:top}
-    .rechnungs-info td:first-child{color:#666;width:55%;text-transform:uppercase;font-size:8px}
-    .rechnungs-info td:last-child{text-align:right;color:#0066cc;font-weight:500}
-    .datum-zeile{text-align:right;margin:30px 0 40px 0}
-    .intro{font-size:10px;line-height:1.6;margin-bottom:25px}
-    table.positionen{width:100%;border-collapse:collapse}
-    table.positionen th{background:${tplColorTableBg};padding:10px 8px;font-size:9px;font-weight:600;text-align:left;border-bottom:1px solid #ccc}
-    table.positionen th.right{text-align:right}
-    .summen-block table{width:100%;border-collapse:collapse}
-    .summen-block td{padding:8px;font-size:10px}
-    .summen-block .netto-row td,.summen-block .brutto-row td{background:${tplColorTableBg}}
-    .summen-block .brutto-row td{font-weight:600}
-    .summen-block .ust-row td{font-size:9px;color:#666}
-    .zahlungsinfo{margin-top:30px;font-size:10px;line-height:1.7}
-    .gruss{margin-top:25px;font-size:10px}
-    .page-number{position:fixed;bottom:20px;right:50px;font-size:8px;color:#999}
-  </style></head><body>
+  // Firmen-Position (Absender-Zeile)
+  const absenderText = `${s.name||'Firmenname'} / ${firmaAdresse[0]||''} / ${firmaAdresse[1]||''}`;
+  const absenderAlign = tplCompanyPos === 'top-right' ? 'right' : 'left';
 
-  <div class="header">
-    <div class="absender-zeile">${s.name||'Firmenname'} / ${firmaAdresse[0]||''} / ${firmaAdresse[1]||''}</div>
-    <div class="logo-container">${logoImg}</div>
-  </div>
-
-  <div class="info-container">
-    <div class="kunde-adresse">
+  // Kunden- / Rechnungsinfo-Reihenfolge (links/rechts)
+  const kundeBlock = `<div class="kunde-adresse">
       <div>${kunde?kunde.name:doc.kunde}</div>
       <div>${kundeAdresse[0]||''}</div>
       <div>${kundeAdresse[1]||''}</div>
       <div>Deutschland</div>
-    </div>
-    <div class="rechnungs-info">
+    </div>`;
+  const rechnungsInfoBlock = `<div class="rechnungs-info">
       <table>
         <tr><td>${istAngebot?'Angebots-Nr.':'Rechnungs-Nr.'}</td><td>${doc.nr}</td></tr>
         <tr><td>${istAngebot?'Angebotsdatum':'Rechnungsdatum'}</td><td>${datumFormatiert}</td></tr>
@@ -792,8 +847,67 @@ function druckeDokument(doc, kunde, typ) {
         <tr><td>Ihre Kundennummer</td><td>${kundennummer}</td></tr>
         <tr><td>Ihr Ansprechpartner</td><td>${s.name||''}${s.mail?'<br>'+s.mail:''}</td></tr>
       </table>
-    </div>
-  </div>
+    </div>`;
+  const infoContainerInner = tplCustomerPos === 'right'
+    ? rechnungsInfoBlock + kundeBlock
+    : kundeBlock + rechnungsInfoBlock;
+
+  // Logo oben / unten
+  const logoTopHtml = (tplLogoV === 'top' && logoImg)
+    ? `<div class="logo-container" style="text-align:${logoAlign};margin-bottom:10px">${logoImg}</div>` : '';
+  const logoBottomHtml = (tplLogoV === 'bottom' && logoImg)
+    ? `<div class="logo-container" style="text-align:${logoAlign};margin-top:30px">${logoImg}</div>` : '';
+
+  // Bank-Details: footer / sidebar / none
+  const bankFooterHtml = (!istAngebot && s.iban && tplBankPos === 'footer')
+    ? `<div style="margin-top:30px;padding-top:15px;border-top:1px solid #ddd;font-size:9px;color:#666">
+        <strong>Bankverbindung:</strong> ${s.bank||''} | IBAN: ${s.iban} ${s.bic?'| BIC: '+s.bic:''} | Kontoinhaber: ${s.kontoinhaber||s.name||''}
+      </div>` : '';
+  const bankSidebarHtml = (!istAngebot && s.iban && tplBankPos === 'sidebar')
+    ? `<div class="bank-sidebar">
+        <div style="font-weight:600;margin-bottom:4px;color:${tplColorHighlight}">Bankverbindung</div>
+        <div>${s.bank||''}</div>
+        <div>IBAN: ${s.iban}</div>
+        ${s.bic?'<div>BIC: '+s.bic+'</div>':''}
+        <div>${s.kontoinhaber||s.name||''}</div>
+      </div>` : '';
+
+  const html=`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${typ} ${doc.nr}</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:${tplColorBg}}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:${tplColorText};padding:40px 50px;line-height:1.5;position:relative;min-height:1100px}
+    .absender-zeile{font-size:8px;color:#666;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:10px;text-align:${absenderAlign}}
+    .info-container{display:flex;justify-content:space-between;margin:20px 0;gap:20px}
+    .kunde-adresse{width:50%}
+    .rechnungs-info{width:45%;font-size:9px}
+    .rechnungs-info table{width:100%}
+    .rechnungs-info td{padding:4px 0;vertical-align:top}
+    .rechnungs-info td:first-child{color:#666;width:55%;text-transform:uppercase;font-size:8px}
+    .rechnungs-info td:last-child{text-align:right;color:${tplColorHighlight};font-weight:500}
+    .datum-zeile{text-align:right;margin:30px 0 40px 0}
+    .intro{font-size:10px;line-height:1.6;margin-bottom:25px;color:${tplColorText}}
+    table.positionen{width:100%;border-collapse:collapse}
+    table.positionen th{background:${tplColorTableBg};color:${tplColorHighlight};padding:10px 8px;font-size:9px;font-weight:600;text-align:left;border-bottom:${headerBorder}}
+    table.positionen th.right{text-align:right}
+    .summen-block table{width:100%;border-collapse:collapse;margin-top:10px}
+    .summen-block td{padding:8px;font-size:10px}
+    .summen-block .netto-row td,.summen-block .brutto-row td{background:${tplColorTableBg}}
+    .summen-block .brutto-row td{font-weight:600;color:${tplColorHighlight}}
+    .summen-block .ust-row td{font-size:9px;color:#666}
+    .zahlungsinfo{margin-top:30px;font-size:10px;line-height:1.7}
+    .gruss{margin-top:25px;font-size:10px}
+    .qr-section{margin-top:30px;display:inline-block;text-align:center;padding:8px;border:1px dashed #ccc;border-radius:4px}
+    .bank-sidebar{position:absolute;top:120px;right:40px;width:170px;padding:10px;background:${tplColorTableBg};border-radius:4px;font-size:8px;line-height:1.5;color:${tplColorText}}
+    .page-number{position:fixed;bottom:20px;right:50px;font-size:8px;color:#999}
+  </style></head><body>
+
+  ${logoTopHtml}
+
+  <div class="absender-zeile">${absenderText}</div>
+
+  ${bankSidebarHtml}
+
+  <div class="info-container">${infoContainerInner}</div>
 
   <div class="datum-zeile">${datumFormatiert}</div>
 
@@ -812,7 +926,7 @@ function druckeDokument(doc, kunde, typ) {
 
   <div class="summen-block"><table>
     <tr class="netto-row"><td>Gesamtbetrag netto</td><td style="text-align:right">${Number(doc.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>
-    <tr class="ust-row"><td colspan="2">Umsatzsteuer nicht erhoben gemäß §19UStG.</td></tr>
+    <tr class="ust-row"><td colspan="2">Umsatzsteuer nicht erhoben gemäß §19 UStG.</td></tr>
     <tr class="brutto-row"><td>Gesamtbetrag brutto</td><td style="text-align:right">${Number(doc.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>
   </table></div>
 
@@ -821,11 +935,13 @@ function druckeDokument(doc, kunde, typ) {
     <p>Bitte überweisen Sie den Rechnungsbetrag unter Angabe der Rechnungsnummer auf das unten angegebene Konto.<br>Der Rechnungsbetrag ist bis zum ${faelligFormatiert} fällig.</p>` : ''}
   </div>
 
+  ${qrCodeHtml}
+
   <div class="gruss">${tplGreeting}<br>${s.name||''} ${s.mail||''}</div>
 
-  ${!istAngebot && s.iban ? `<div style="margin-top:30px;padding-top:15px;border-top:1px solid #ddd;font-size:9px;color:#666">
-    <strong>Bankverbindung:</strong> ${s.bank||''} | IBAN: ${s.iban} ${s.bic?'| BIC: '+s.bic:''} | Kontoinhaber: ${s.kontoinhaber||s.name}
-  </div>` : ''}
+  ${logoBottomHtml}
+
+  ${bankFooterHtml}
 
   <div class="page-number">1/1</div>
   </body></html>`;

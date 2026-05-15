@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__pycharm__list_directory_tree",
+      "Bash(node --check src/app.js)",
+      "Bash(node --check main.js)"
+    ]
+  }
+}
