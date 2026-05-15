@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buchhaltung</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo" id="sidebar-logo">
+    <img id="sidebar-logo-img" style="display:none;max-width:240px;max-height:150px;object-fit:contain">
+    <span id="sidebar-logo-text">Buch<span style="font-weight:300;color:var(--muted)">haltung</span></span>
+  </div>
+  <div class="nav-section">Übersicht</div>
+  <div class="nav-item active" onclick="showSection('dashboard',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-section">Dokumente</div>
+  <div class="nav-item" onclick="showSection('angebote',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    Angebote
+  </div>
+  <div class="nav-item" onclick="showSection('rechnungen',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Rechnungen
+  </div>
+  <div class="nav-item" onclick="showSection('wiederkehrend',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    Wiederkehrend
+  </div>
+  <div class="nav-section">Finanzen</div>
+  <div class="nav-item" onclick="showSection('ausgaben',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+    Ausgaben
+  </div>
+  <div class="nav-item" onclick="showSection('erfassen',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+    Beleg erfassen
+  </div>
+  <div class="nav-section">Stammdaten</div>
+  <div class="nav-item" onclick="showSection('kunden',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+    Kunden
+  </div>
+  <div class="nav-item" onclick="showSection('einstellungen',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+    Einstellungen
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </div>
+  <div class="content" id="content">
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="grid4" style="margin-bottom:20px">
+        <div class="metric"><div class="metric-label">Einnahmen (Jahr)</div><div class="metric-value" id="m-ein">0 €</div></div>
+        <div class="metric"><div class="metric-label">Ausgaben (Jahr)</div><div class="metric-value" id="m-aus">0 €</div></div>
+        <div class="metric"><div class="metric-label">Gewinn (Jahr)</div><div class="metric-value" id="m-gew">0 €</div></div>
+        <div class="metric"><div class="metric-label">Offene Rechnungen</div><div class="metric-value" id="m-off">0</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>Offene Rechnungen</h3>
+          <div id="dash-offen" class="empty">Keine offenen Rechnungen</div>
+        </div>
+        <div class="card">
+          <h3>Letzte Aktivitäten</h3>
+          <div id="dash-akt" class="empty">Noch keine Einträge</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Fällige Wiederkehrende Rechnungen</h3>
+        <div id="dash-recur" class="empty">Keine fälligen Rechnungen</div>
+      </div>
+    </div>
+
+    <!-- ANGEBOTE -->
+    <div class="section" id="sec-angebote">
+      <div id="angebot-liste">
+        <table>
+          <thead><tr><th>Nr.</th><th>Kunde</th><th>Datum</th><th>Gültig bis</th><th>Betrag</th><th>Status</th><th></th></tr></thead>
+          <tbody id="angebot-tbody"><tr><td colspan="7" class="empty">Noch keine Angebote</td></tr></tbody>
+        </table>
+      </div>
+      <div id="angebot-form" class="form-panel" style="display:none">
+        <div class="form-panel-header">
+          <h3 style="margin:0">Neues Angebot</h3>
+          <button class="btn" onclick="hideAngebotForm()">Abbrechen</button>
+        </div>
+        <div class="grid2">
+          <div><label>Angebotsnummer</label><input type="text" id="ang-nr"></div>
+          <div><label>Datum</label><input type="date" id="ang-datum"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Kunde</label><select id="ang-kunde"><option value="">— Kunde wählen —</option></select></div>
+          <div><label>Gültig bis</label><input type="date" id="ang-gueltig"></div>
+        </div>
+        <div style="margin:12px 0 4px"><label>Positionen</label></div>
+        <div class="pos-header"><span>Beschreibung</span><span>Menge</span><span>Einzelpreis €</span><span>Gesamt</span><span></span></div>
+        <div id="ang-positionen"></div>
+        <button class="btn btn-sm" onclick="addAngPos()" style="margin-bottom:12px">+ Position</button>
+        <label>Einleitung / Anmerkungen</label>
+        <textarea id="ang-notiz" placeholder="Wir unterbreiten Ihnen folgendes Angebot…"></textarea>
+        <label>Fußnote</label>
+        <textarea id="ang-fussnote" style="min-height:40px"></textarea>
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:12px">
+          <div><span style="font-size:12px;color:var(--muted)">Angebotssumme: </span><strong id="ang-gesamt" style="font-size:17px">0,00 €</strong></div>
+          <button class="btn" onclick="speichernAngebot(false)">Speichern</button>
+          <button class="btn btn-primary" onclick="speichernAngebot(true)">Speichern & PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHNUNGEN -->
+    <div class="section" id="sec-rechnungen">
+      <div id="rechnung-liste">
+        <table>
+          <thead><tr><th>Nr.</th><th>Kunde</th><th>Datum</th><th>Fällig</th><th>Betrag</th><th>Status</th><th></th></tr></thead>
+          <tbody id="rechnung-tbody"><tr><td colspan="7" class="empty">Noch keine Rechnungen</td></tr></tbody>
+        </table>
+      </div>
+      <div id="rechnung-form" class="form-panel" style="display:none">
+        <div class="form-panel-header">
+          <h3 style="margin:0">Neue Rechnung</h3>
+          <button class="btn" onclick="hideRechnungForm()">Abbrechen</button>
+        </div>
+        <div class="grid2">
+          <div><label>Rechnungsnummer</label><input type="text" id="r-nr"></div>
+          <div><label>Datum</label><input type="date" id="r-datum"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Kunde</label><select id="r-kunde"><option value="">— Kunde wählen —</option></select></div>
+          <div><label>Fällig am</label><input type="date" id="r-faellig"></div>
+        </div>
+        <div style="margin:12px 0 4px"><label>Positionen</label></div>
+        <div class="pos-header"><span>Beschreibung</span><span>Menge</span><span>Einzelpreis €</span><span>Gesamt</span><span></span></div>
+        <div id="r-positionen"></div>
+        <button class="btn btn-sm" onclick="addRPos()" style="margin-bottom:12px">+ Position</button>
+        <label>Notizen / Zahlungsbedingungen</label>
+        <textarea id="r-notiz"></textarea>
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:12px">
+          <div><span style="font-size:12px;color:var(--muted)">Gesamtbetrag: </span><strong id="r-gesamt" style="font-size:17px">0,00 €</strong></div>
+          <button class="btn" onclick="speichernRechnung(false)">Speichern</button>
+          <button class="btn btn-primary" onclick="speichernRechnung(true)">Speichern & PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WIEDERKEHREND -->
+    <div class="section" id="sec-wiederkehrend">
+      <div id="recur-liste"></div>
+      <div id="recur-form" class="form-panel" style="display:none">
+        <div class="form-panel-header">
+          <h3 style="margin:0">Wiederkehrende Rechnung</h3>
+          <button class="btn" onclick="hideRecurForm()">Abbrechen</button>
+        </div>
+        <div class="grid2">
+          <div><label>Bezeichnung (intern)</label><input type="text" id="rec-name" placeholder="z.B. Monatsretainer Müller"></div>
+          <div><label>Kunde</label><select id="rec-kunde"><option value="">— Kunde wählen —</option></select></div>
+        </div>
+        <div class="grid2">
+          <div><label>Intervall</label>
+            <select id="rec-intervall">
+              <option value="monatlich">Monatlich</option>
+              <option value="quartalsweise">Quartalsweise</option>
+              <option value="halbjaehrlich">Halbjährlich</option>
+              <option value="jaehrlich">Jährlich</option>
+            </select>
+          </div>
+          <div><label>Nächste Ausführung</label><input type="date" id="rec-naechste"></div>
+        </div>
+        <div><label>Zahlungsziel (Tage)</label><input type="number" id="rec-zahltage" value="14" style="width:120px"></div>
+        <div style="margin:12px 0 4px"><label>Positionen</label></div>
+        <div class="pos-header"><span>Beschreibung</span><span>Menge</span><span>Einzelpreis €</span><span>Gesamt</span><span></span></div>
+        <div id="rec-positionen"></div>
+        <button class="btn btn-sm" onclick="addRecPos()" style="margin-bottom:12px">+ Position</button>
+        <label>Notiz (erscheint auf der Rechnung)</label>
+        <textarea id="rec-notiz"></textarea>
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:12px">
+          <div><span style="font-size:12px;color:var(--muted)">Betrag: </span><strong id="rec-gesamt" style="font-size:17px">0,00 €</strong></div>
+          <button class="btn btn-primary" onclick="speichernRecur()">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUSGABEN -->
+    <div class="section" id="sec-ausgaben">
+      <div id="ausgabe-form" class="form-panel" style="display:none">
+        <div class="form-panel-header"><h3 style="margin:0">Neue Ausgabe</h3><button class="btn" onclick="document.getElementById('ausgabe-form').style.display='none'">Abbrechen</button></div>
+        <div class="grid2">
+          <div><label>Datum</label><input type="date" id="a-datum"></div>
+          <div><label>Betrag (€)</label><input type="number" id="a-betrag" step="0.01"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Kategorie</label>
+            <select id="a-kat"><option>Büromaterial</option><option>Software/IT</option><option>Fahrtkosten</option><option>Telefon/Internet</option><option>Weiterbildung</option><option>Werbung</option><option>Sonstiges</option></select>
+          </div>
+          <div><label>Beschreibung</label><input type="text" id="a-beschr"></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn btn-primary" onclick="speichernAusgabe()">Speichern</button></div>
+      </div>
+      <table>
+        <thead><tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th>Betrag</th><th></th></tr></thead>
+        <tbody id="ausgaben-tbody"><tr><td colspan="5" class="empty">Noch keine Ausgaben</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- BELEG ERFASSEN -->
+    <div class="section" id="sec-erfassen">
+      <div class="card">
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+          <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" style="margin-bottom:10px"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          <div style="font-weight:500">Beleg hochladen</div>
+          <div style="font-size:12px;color:var(--hint);margin-top:4px">JPG, PNG oder PDF – KI erkennt Datum, Betrag und Kategorie</div>
+        </div>
+        <input type="file" id="file-input" accept="image/*,.pdf" style="display:none" onchange="handleUpload(this)">
+        <div id="ai-status" style="display:none;padding:16px;text-align:center;color:var(--muted)"></div>
+        <div id="ocr-result" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+          <h3>Erkannte Daten <span class="badge badge-info">KI-Vorschlag</span></h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Bitte prüfen und ggf. korrigieren:</p>
+          <div class="grid2">
+            <div><label>Datum</label><input type="date" id="ocr-datum"></div>
+            <div><label>Betrag (€)</label><input type="number" id="ocr-betrag" step="0.01"></div>
+          </div>
+          <div class="grid2">
+            <div><label>Beschreibung</label><input type="text" id="ocr-beschr"></div>
+            <div><label>Kategorie</label>
+              <select id="ocr-kat"><option>Büromaterial</option><option>Software/IT</option><option>Fahrtkosten</option><option>Telefon/Internet</option><option>Weiterbildung</option><option>Werbung</option><option>Sonstiges</option></select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-primary" onclick="ausgabeAusOCR()">Als Ausgabe übernehmen</button>
+            <button class="btn" onclick="resetUpload()">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KUNDEN -->
+    <div class="section" id="sec-kunden">
+      <div id="kunde-form" class="form-panel" style="display:none">
+        <div class="form-panel-header"><h3 style="margin:0" id="kunde-form-title">Neuer Kunde</h3><button class="btn" onclick="hideKundeForm()">Abbrechen</button></div>
+        <input type="hidden" id="k-id">
+        <div class="grid2">
+          <div><label>Name / Firma</label><input type="text" id="k-name"></div>
+          <div><label>Kontaktperson</label><input type="text" id="k-kontakt"></div>
+        </div>
+        <div class="grid2">
+          <div><label>E-Mail</label><input type="email" id="k-mail"></div>
+          <div><label>Telefon</label><input type="tel" id="k-tel"></div>
+        </div>
+        <label>Adresse (für Rechnungen)</label>
+        <textarea id="k-adresse" placeholder="Straße Nr.&#10;PLZ Ort&#10;Land"></textarea>
+        <div style="margin-top:12px"><button class="btn btn-primary" onclick="speichernKunde()">Speichern</button></div>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>E-Mail</th><th>Telefon</th><th>Rechnungen</th><th></th></tr></thead>
+        <tbody id="kunden-tbody"><tr><td colspan="5" class="empty">Noch keine Kunden</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- EINSTELLUNGEN -->
+    <div class="section" id="sec-einstellungen">
+      <div class="card">
+        <h3>Deine Daten (Briefkopf)</h3>
+        <div class="grid2">
+          <div><label>Name / Firmenname</label><input type="text" id="s-name"></div>
+          <div><label>Berufsbezeichnung</label><input type="text" id="s-beruf"></div>
+        </div>
+        <label>Adresse</label><textarea id="s-adresse" placeholder="Straße Nr.&#10;PLZ Ort&#10;Deutschland"></textarea>
+        <div class="grid2">
+          <div><label>Telefon</label><input type="text" id="s-tel"></div>
+          <div><label>E-Mail</label><input type="email" id="s-mail"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Website</label><input type="text" id="s-web"></div>
+          <div><label>Steuernummer</label><input type="text" id="s-steuernr"></div>
+        </div>
+        <h3 style="margin-top:16px">Bankverbindung</h3>
+        <div class="grid2">
+          <div><label>Kontoinhaber</label><input type="text" id="s-kontoinhaber"></div>
+          <div><label>Bank</label><input type="text" id="s-bank"></div>
+        </div>
+        <div class="grid2">
+          <div><label>IBAN</label><input type="text" id="s-iban"></div>
+          <div><label>BIC</label><input type="text" id="s-bic"></div>
+        </div>
+        <h3 style="margin-top:16px">Logo / Branding</h3>
+        <label>Firmenlogo (erscheint in der Sidebar)</label>
+        <div style="margin-bottom:12px">
+          <div id="logo-preview" style="display:none;margin-bottom:8px;padding:12px;background:var(--bg);border-radius:var(--radius);text-align:center">
+            <img id="logo-preview-img" style="max-width:200px;max-height:80px;object-fit:contain">
+          </div>
+          <input type="file" id="logo-upload" accept="image/png,image/jpeg,image/jpg" style="display:none" onchange="handleLogoUpload(this)">
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="document.getElementById('logo-upload').click()">Logo hochladen (PNG/JPG)</button>
+            <button class="btn btn-danger" onclick="loescheLogo()" id="btn-logo-delete" style="display:none">Logo entfernen</button>
+          </div>
+          <div style="font-size:11px;color:var(--hint);margin-top:4px">Empfohlene Größe: 200x80px (max. 5MB)</div>
+        </div>
+
+        <h3 style="margin-top:16px">Rechnungseinstellungen</h3>
+        <div class="grid2">
+          <div><label>Rechnungsprefix</label><input type="text" id="s-prefix" value="RE" style="width:100px"></div>
+          <div><label>Angebotsnummernprefix</label><input type="text" id="s-angprefix" value="ANG" style="width:100px"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Standard-Zahlungsziel (Tage)</label><input type="number" id="s-zahltage" value="14" style="width:100px"></div>
+        </div>
+        <label>Standard-Fußnote Rechnungen</label>
+        <textarea id="s-fussnote">Gemäß §19 UStG wird keine Umsatzsteuer ausgewiesen.</textarea>
+        <label>Standard-Fußnote Angebote</label>
+        <textarea id="s-angfussnote">Dieses Angebot ist freibleibend und unverbindlich. Preise in Euro, netto gemäß §19 UStG.</textarea>
+
+        <h3 style="margin-top:24px">📄 PDF-Template Anpassung</h3>
+        <p style="font-size:12px;color:var(--hint);margin-bottom:12px">Personalisieren Sie das Layout Ihrer Rechnungen und Angebote</p>
+
+        <h4 style="margin-top:16px;font-size:13px">Logo-Positionierung</h4>
+        <div class="grid2">
+          <div>
+            <label>Vertikale Position</label>
+            <select id="s-tpl-logo-pos-v">
+              <option value="top">Oben (Kopfbereich)</option>
+              <option value="bottom">Unten (Fußbereich)</option>
+            </select>
+          </div>
+          <div>
+            <label>Horizontale Position</label>
+            <select id="s-tpl-logo-pos-h">
+              <option value="left">Links</option>
+              <option value="center">Mitte</option>
+              <option value="right">Rechts</option>
+            </select>
+          </div>
+        </div>
+
+        <h4 style="margin-top:16px;font-size:13px">Logo-Größe</h4>
+        <div>
+          <label>Logo Breite (px)</label>
+          <input type="number" id="s-tpl-logo-size" value="140" min="50" max="300" style="width:100px">
+          <span style="font-size:11px;color:var(--hint);margin-left:8px">Empfohlen: 100-200px</span>
+        </div>
+
+        <h4 style="margin-top:16px;font-size:13px">Farben</h4>
+        <div class="grid2">
+          <div>
+            <label>Farbe für Überschriften</label>
+            <input type="color" id="s-tpl-color-highlight" value="#000000">
+          </div>
+          <div>
+            <label>Textfarbe</label>
+            <input type="color" id="s-tpl-color-text" value="#000000">
+          </div>
+        </div>
+        <div class="grid2">
+          <div>
+            <label>Tabellen-Rahmenfarbe</label>
+            <input type="color" id="s-tpl-color-table-border" value="#000000">
+          </div>
+          <div>
+            <label>Tabellen-Hintergrund (USt-Zeile)</label>
+            <input type="color" id="s-tpl-color-table-bg" value="#fef9e6">
+          </div>
+        </div>
+
+        <h4 style="margin-top:16px;font-size:13px">Tabellen-Design</h4>
+        <div>
+          <label>Tabellen-Stil</label>
+          <select id="s-tpl-table-style">
+            <option value="modern">Modern (dünne Linien)</option>
+            <option value="classic">Klassisch (dicke Linien)</option>
+            <option value="minimal">Minimal (ohne Rahmen)</option>
+          </select>
+        </div>
+
+        <h4 style="margin-top:16px;font-size:13px">Layout</h4>
+        <div class="grid2">
+          <div>
+            <label>Position Firmendaten</label>
+            <select id="s-tpl-company-pos">
+              <option value="top-left">Oben Links</option>
+              <option value="top-right">Oben Rechts</option>
+            </select>
+          </div>
+          <div>
+            <label>Position Kundendaten</label>
+            <select id="s-tpl-customer-pos">
+              <option value="left">Links</option>
+              <option value="right">Rechts</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label>Bank-Details Position</label>
+          <select id="s-tpl-bank-details-pos">
+            <option value="footer">Im Fußbereich</option>
+            <option value="sidebar">In Seitenleiste</option>
+            <option value="none">Nicht anzeigen</option>
+          </select>
+        </div>
+
+        <h4 style="margin-top:16px;font-size:13px">Texte</h4>
+        <div>
+          <label>Intro-Text (Begrüßung)</label>
+          <textarea id="s-tpl-intro-text" rows="3">Sehr geehrte Damen und Herren,
+
+vielen Dank für Ihren Auftrag und das damit verbundene Vertrauen!
+Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:</textarea>
+        </div>
+        <div>
+          <label>Grußformel</label>
+          <input type="text" id="s-tpl-greeting" value="Mit freundlichen Grüßen">
+        </div>
+
+        <div style="margin-top:16px;display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="speichernSettings()">Einstellungen speichern</button>
+          <button class="btn" onclick="vorschauTemplate()">📄 Vorschau anzeigen</button>
+        </div>
+        <div id="s-confirm" style="display:none;margin-top:8px;font-size:12px;color:var(--success)">✓ Gespeichert</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
