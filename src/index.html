@@ -37,6 +37,10 @@
     <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
     Ausgaben
   </div>
+  <div class="nav-item" onclick="showSection('euer',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 17v-6h13M9 7H4v10h5"/><path d="M22 7l-6 6-4-4-3 3"/></svg>
+    EÜR
+  </div>
   <div class="nav-item" onclick="showSection('erfassen',this)">
     <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
     Beleg erfassen
@@ -213,6 +217,51 @@
         <thead><tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th>Betrag</th><th></th></tr></thead>
         <tbody id="ausgaben-tbody"><tr><td colspan="5" class="empty">Noch keine Ausgaben</td></tr></tbody>
       </table>
+    </div>
+
+    <!-- EÜR -->
+    <div class="section" id="sec-euer">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <label style="margin:0">Jahr</label>
+            <select id="euer-jahr" onchange="renderEUER()" style="width:auto;min-width:120px"></select>
+          </div>
+          <div style="font-size:11px;color:var(--hint)">Einnahmen-Überschuss-Rechnung gemäß §4 Abs. 3 EStG</div>
+        </div>
+      </div>
+
+      <div class="grid4" style="margin-bottom:16px">
+        <div class="metric"><div class="metric-label">Betriebseinnahmen</div><div class="metric-value" id="euer-einnahmen">0 €</div></div>
+        <div class="metric"><div class="metric-label">Betriebsausgaben</div><div class="metric-value" id="euer-ausgaben">0 €</div></div>
+        <div class="metric"><div class="metric-label">Gewinn / Verlust</div><div class="metric-value" id="euer-gewinn">0 €</div></div>
+        <div class="metric"><div class="metric-label">Offene Forderungen</div><div class="metric-value" id="euer-offen">0 €</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Einnahmen (bezahlte Rechnungen)</h3>
+          <table>
+            <thead><tr><th>Datum</th><th>Rechnung</th><th>Kunde</th><th style="text-align:right">Betrag</th></tr></thead>
+            <tbody id="euer-einnahmen-tbody"><tr><td colspan="4" class="empty">Keine Einnahmen</td></tr></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>Ausgaben nach Kategorie</h3>
+          <table>
+            <thead><tr><th>Kategorie</th><th style="text-align:right">Betrag</th><th style="text-align:right">Anteil</th></tr></thead>
+            <tbody id="euer-kat-tbody"><tr><td colspan="3" class="empty">Keine Ausgaben</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Alle Ausgaben (Detail)</h3>
+        <table>
+          <thead><tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th style="text-align:right">Betrag</th></tr></thead>
+          <tbody id="euer-ausgaben-tbody"><tr><td colspan="4" class="empty">Keine Ausgaben</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- BELEG ERFASSEN -->
@@ -447,6 +496,32 @@ Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:</textarea>
           <input type="text" id="s-tpl-greeting" value="Mit freundlichen Grüßen">
         </div>
 
+        <h3 style="margin-top:24px">Mahnungen</h3>
+        <p style="font-size:12px;color:var(--hint);margin-bottom:8px">Konfiguration der Mahnstufen (Mahngebühren, Verzugszinsen, Texte und Fristen)</p>
+        <div class="grid2">
+          <div><label>Mahnungs-Prefix</label><input type="text" id="s-mahnung-prefix" value="M" style="width:100px"></div>
+          <div><label>Verzugszinsen p.a. (%)</label><input type="number" id="s-verzugszins" step="0.01" value="9.12" style="width:120px"><span style="font-size:11px;color:var(--hint);margin-left:8px">Default: 9,12% (Geschäftskunden)</span></div>
+        </div>
+        <h4 style="margin-top:12px;font-size:13px">Mahngebühren (€)</h4>
+        <div class="grid3">
+          <div><label>Stufe 1 (Erinnerung)</label><input type="number" id="s-mahngebuehr-1" step="0.01" value="0"></div>
+          <div><label>Stufe 2 (1. Mahnung)</label><input type="number" id="s-mahngebuehr-2" step="0.01" value="5"></div>
+          <div><label>Stufe 3 (Letzte Mahnung)</label><input type="number" id="s-mahngebuehr-3" step="0.01" value="10"></div>
+        </div>
+        <h4 style="margin-top:12px;font-size:13px">Zahlungsfristen (Tage)</h4>
+        <div class="grid3">
+          <div><label>Stufe 1</label><input type="number" id="s-mahnung-frist-1" value="7"></div>
+          <div><label>Stufe 2</label><input type="number" id="s-mahnung-frist-2" value="7"></div>
+          <div><label>Stufe 3</label><input type="number" id="s-mahnung-frist-3" value="7"></div>
+        </div>
+        <h4 style="margin-top:12px;font-size:13px">Textbausteine</h4>
+        <label>Stufe 1 – Zahlungserinnerung (freundlich)</label>
+        <textarea id="s-mahnung-text-1" rows="3"></textarea>
+        <label>Stufe 2 – Erste Mahnung (bestimmt)</label>
+        <textarea id="s-mahnung-text-2" rows="3"></textarea>
+        <label>Stufe 3 – Letzte Mahnung (streng)</label>
+        <textarea id="s-mahnung-text-3" rows="3"></textarea>
+
         <div style="margin-top:16px;display:flex;gap:8px">
           <button class="btn btn-primary" onclick="speichernSettings()">Einstellungen speichern</button>
           <button class="btn" onclick="vorschauTemplate()">📄 Vorschau anzeigen</button>
@@ -457,6 +532,25 @@ Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:</textarea>
 
   </div><!-- /content -->
 </main>
+
+<!-- MAHNUNG MODAL -->
+<div class="modal-backdrop" id="mahnung-modal" style="display:none">
+  <div class="modal">
+    <h3 id="mahnung-modal-title">Mahnung erstellen</h3>
+    <div id="mahnung-modal-info" style="font-size:12px;color:var(--muted);margin-bottom:12px"></div>
+    <label>Mahnstufe auswählen</label>
+    <select id="mahnung-stufe-select">
+      <option value="1">Stufe 1 – Zahlungserinnerung (freundlich)</option>
+      <option value="2">Stufe 2 – Erste Mahnung (mit Gebühr + Verzugszinsen)</option>
+      <option value="3">Stufe 3 – Letzte Mahnung (Androhung rechtl. Schritte)</option>
+    </select>
+    <div id="mahnung-preview" style="margin-top:14px;padding:12px;background:var(--bg);border-radius:var(--radius);font-size:12px;line-height:1.6"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+      <button class="btn" onclick="hideMahnungModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="erstelleMahnung()">Mahnung erstellen & PDF</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 

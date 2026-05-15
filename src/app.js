@@ -21,7 +21,19 @@ let settings = {
   tpl_intro_text: 'Sehr geehrte Damen und Herren,<br><br>vielen Dank für Ihren Auftrag und das damit verbundene Vertrauen!<br>Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:',
   tpl_greeting: 'Mit freundlichen Grüßen',
   tpl_bank_details_pos: 'footer', // footer, sidebar, none
-  tpl_table_style: 'modern' // modern, classic, minimal
+  tpl_table_style: 'modern', // modern, classic, minimal
+  // Mahnungen
+  mahnung_prefix: 'M',
+  mahngebuehr_stufe1: 0,        // Stufe 1: i.d.R. keine Gebühr
+  mahngebuehr_stufe2: 5,
+  mahngebuehr_stufe3: 10,
+  verzugszins_pct: 9.12,         // p.a., Geschäftskunden vereinfacht
+  mahnung_frist_stufe1: 7,       // Tage bis neue Fälligkeit
+  mahnung_frist_stufe2: 7,
+  mahnung_frist_stufe3: 7,
+  mahnung_text_stufe1: 'bei Durchsicht unserer Buchhaltung haben wir festgestellt, dass die unten aufgeführte Rechnung bisher nicht beglichen wurde. Möglicherweise ist Ihnen dies entgangen – wir möchten Sie daher freundlich an die ausstehende Zahlung erinnern. Bitte überweisen Sie den offenen Betrag bis zum genannten Datum.',
+  mahnung_text_stufe2: 'trotz unserer Zahlungserinnerung konnten wir bisher keinen Zahlungseingang feststellen. Wir fordern Sie hiermit auf, den ausstehenden Betrag inkl. Mahngebühren und Verzugszinsen umgehend zu begleichen. Eine weitere Mahnung würde zusätzliche Kosten verursachen.',
+  mahnung_text_stufe3: 'trotz mehrfacher Aufforderung haben Sie die offene Forderung bisher nicht beglichen. Dies ist unsere letzte Mahnung. Sollte der Gesamtbetrag nicht bis zum unten genannten Termin auf unserem Konto eingegangen sein, sehen wir uns gezwungen, ohne weitere Ankündigung das gerichtliche Mahnverfahren einzuleiten bzw. die Forderung an ein Inkassobüro zu übergeben.'
 };
 let logoData = ''; // Logo wird separat geladen
 let rPosC=0, angPosC=0, recPosC=0;
@@ -32,6 +44,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     data = await window.api.loadData();
     if(!data.angebote) data.angebote=[];
     if(!data.wiederkehrend) data.wiederkehrend=[];
+    // Migration: Mahnungs-Felder und bezahltAm auf bestehenden Rechnungen ergänzen
+    data.rechnungen.forEach(r => {
+      if(r.mahnstufe === undefined) r.mahnstufe = 0;
+      if(!r.mahnungen) r.mahnungen = [];
+      if(r.status === 'bezahlt' && !r.bezahltAm) r.bezahltAm = r.datum;
+    });
     const s = await window.api.loadSettings();
     if(s && Object.keys(s).length) Object.assign(settings, s);
 
@@ -191,7 +209,7 @@ function showSection(id, el) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
   if(el) el.classList.add('active');
-  const titles = {dashboard:'Dashboard',angebote:'Angebote',rechnungen:'Rechnungen',wiederkehrend:'Wiederkehrende Rechnungen',ausgaben:'Ausgaben',erfassen:'Beleg erfassen',kunden:'Kunden',einstellungen:'Einstellungen'};
+  const titles = {dashboard:'Dashboard',angebote:'Angebote',rechnungen:'Rechnungen',wiederkehrend:'Wiederkehrende Rechnungen',ausgaben:'Ausgaben',euer:'Einnahmen-Überschuss-Rechnung',erfassen:'Beleg erfassen',kunden:'Kunden',einstellungen:'Einstellungen'};
   document.getElementById('topbar-title').textContent = titles[id]||id;
   setTopbarActions(id);
   if(id==='rechnungen') renderRechnungen();
@@ -199,6 +217,7 @@ function showSection(id, el) {
   if(id==='kunden') renderKunden();
   if(id==='ausgaben') renderAusgaben();
   if(id==='wiederkehrend') renderWiederkehrend();
+  if(id==='euer') initEUER();
   if(id==='einstellungen') ladeSettings();
 }
 function setTopbarActions(id) {
@@ -209,6 +228,7 @@ function setTopbarActions(id) {
   else if(id==='angebote') el.innerHTML=`<button class="btn btn-sm btn-primary" onclick="showAngebotForm()">+ Neues Angebot</button>`;
   else if(id==='wiederkehrend') el.innerHTML=`<button class="btn btn-sm btn-primary" onclick="showRecurForm()">+ Neue Vorlage</button>`;
   else if(id==='ausgaben') el.innerHTML=csvBtn+`<button class="btn btn-sm btn-primary" onclick="showAusgabeForm()">+ Neue Ausgabe</button>`;
+  else if(id==='euer') el.innerHTML=csvBtn+`<button class="btn btn-sm btn-primary" onclick="druckeEUER()">📄 EÜR als PDF</button>`;
   else if(id==='kunden') el.innerHTML=`<button class="btn btn-sm btn-primary" onclick="showKundeForm()">+ Neuer Kunde</button>`;
   else el.innerHTML='';
 }
@@ -307,16 +327,32 @@ function speichernRechnung(pdf) {
 function renderRechnungen() {
   const tb=document.getElementById('rechnung-tbody');
   if(!data.rechnungen.length){tb.innerHTML='<tr><td colspan="7" class="empty">Noch keine Rechnungen</td></tr>';return}
-  tb.innerHTML=data.rechnungen.slice().reverse().map(r=>`<tr>
-    <td>${r.nr}</td><td>${r.kunde}</td><td>${r.datum}</td><td>${r.faellig||'—'}</td><td>${fmt(r.gesamt)}</td>
-    <td><span class="badge badge-${r.status==='bezahlt'?'success':'warning'}">${r.status==='bezahlt'?'Bezahlt':'Offen'}</span></td>
-    <td style="display:flex;gap:4px">
-      ${r.status==='offen'?`<button class="btn btn-sm" onclick="markBezahlt('${r.id}')">✓</button>`:''}
-      <button class="btn btn-sm" onclick="druckeDokumentById('${r.id}','rechnung')">PDF</button>
-      <button class="btn btn-sm btn-danger" onclick="loescheRechnung('${r.id}')">✕</button>
-    </td></tr>`).join('');
+  tb.innerHTML=data.rechnungen.slice().reverse().map(r=>{
+    const stufe = r.mahnstufe || 0;
+    const istUeberfaellig = r.status==='offen' && r.faellig && r.faellig < today();
+    let statusBadge = '';
+    if(r.status==='bezahlt') statusBadge = `<span class="badge badge-success">Bezahlt</span>`;
+    else if(stufe>0) {
+      const stufenName = stufe===1?'1. Erinnerung':(stufe===2?'1. Mahnung':'Letzte Mahnung');
+      statusBadge = `<span class="badge badge-danger">${stufenName}</span>`;
+    } else if(istUeberfaellig) statusBadge = `<span class="badge badge-warning">Überfällig</span>`;
+    else statusBadge = `<span class="badge badge-warning">Offen</span>`;
+
+    const mahnBtn = r.status==='offen' && stufe<3
+      ? `<button class="btn btn-sm" onclick="showMahnungModal('${r.id}')" title="Mahnung erstellen">⚠</button>` : '';
+
+    return `<tr>
+      <td>${r.nr}</td><td>${r.kunde}</td><td>${r.datum}</td><td>${r.faellig||'—'}</td><td>${fmt(r.gesamt)}</td>
+      <td>${statusBadge}</td>
+      <td style="display:flex;gap:4px">
+        ${r.status==='offen'?`<button class="btn btn-sm" onclick="markBezahlt('${r.id}')" title="Als bezahlt markieren">✓</button>`:''}
+        ${mahnBtn}
+        <button class="btn btn-sm" onclick="druckeDokumentById('${r.id}','rechnung')" title="Rechnung als PDF">PDF</button>
+        <button class="btn btn-sm btn-danger" onclick="loescheRechnung('${r.id}')">✕</button>
+      </td></tr>`;
+  }).join('');
 }
-function markBezahlt(id){ const r=data.rechnungen.find(r=>r.id==id); if(r){r.status='bezahlt';save();renderRechnungen();toast('Als bezahlt markiert');} }
+function markBezahlt(id){ const r=data.rechnungen.find(r=>r.id==id); if(r){r.status='bezahlt';r.bezahltAm=today();save();renderRechnungen();toast('Als bezahlt markiert');} }
 function loescheRechnung(id){ if(confirm('Rechnung löschen?')){data.rechnungen=data.rechnungen.filter(r=>r.id!=id);save();renderRechnungen();} }
 function druckeDokumentById(id,typ){
   if(typ==='rechnung'){ const r=data.rechnungen.find(x=>x.id==id); const k=data.kunden.find(x=>x.id==r.kundeId); druckeDokument(r,k,'Rechnung'); }
@@ -611,6 +647,19 @@ async function speichernSettings() {
   settings.tpl_intro_text = document.getElementById('s-tpl-intro-text').value;
   settings.tpl_greeting = document.getElementById('s-tpl-greeting').value;
 
+  // Mahnungs-Einstellungen
+  const mP = document.getElementById('s-mahnung-prefix'); if(mP) settings.mahnung_prefix = mP.value || 'M';
+  const vz = document.getElementById('s-verzugszins'); if(vz) settings.verzugszins_pct = parseFloat(vz.value)||0;
+  const g1 = document.getElementById('s-mahngebuehr-1'); if(g1) settings.mahngebuehr_stufe1 = parseFloat(g1.value)||0;
+  const g2 = document.getElementById('s-mahngebuehr-2'); if(g2) settings.mahngebuehr_stufe2 = parseFloat(g2.value)||0;
+  const g3 = document.getElementById('s-mahngebuehr-3'); if(g3) settings.mahngebuehr_stufe3 = parseFloat(g3.value)||0;
+  const f1 = document.getElementById('s-mahnung-frist-1'); if(f1) settings.mahnung_frist_stufe1 = parseInt(f1.value)||7;
+  const f2 = document.getElementById('s-mahnung-frist-2'); if(f2) settings.mahnung_frist_stufe2 = parseInt(f2.value)||7;
+  const f3 = document.getElementById('s-mahnung-frist-3'); if(f3) settings.mahnung_frist_stufe3 = parseInt(f3.value)||7;
+  const t1 = document.getElementById('s-mahnung-text-1'); if(t1) settings.mahnung_text_stufe1 = t1.value;
+  const t2 = document.getElementById('s-mahnung-text-2'); if(t2) settings.mahnung_text_stufe2 = t2.value;
+  const t3 = document.getElementById('s-mahnung-text-3'); if(t3) settings.mahnung_text_stufe3 = t3.value;
+
   await window.api.saveSettings(settings);
   const c=document.getElementById('s-confirm');c.style.display='block';setTimeout(()=>c.style.display='none',2500);
   toast('Einstellungen gespeichert');
@@ -639,6 +688,20 @@ async function ladeSettings() {
   if(settings.tpl_bank_details_pos) document.getElementById('s-tpl-bank-details-pos').value = settings.tpl_bank_details_pos;
   if(settings.tpl_intro_text) document.getElementById('s-tpl-intro-text').value = settings.tpl_intro_text;
   if(settings.tpl_greeting) document.getElementById('s-tpl-greeting').value = settings.tpl_greeting;
+
+  // Mahnungs-Einstellungen laden
+  const setVal = (id, val) => { const el = document.getElementById(id); if(el && val !== undefined && val !== null) el.value = val; };
+  setVal('s-mahnung-prefix', settings.mahnung_prefix);
+  setVal('s-verzugszins', settings.verzugszins_pct);
+  setVal('s-mahngebuehr-1', settings.mahngebuehr_stufe1);
+  setVal('s-mahngebuehr-2', settings.mahngebuehr_stufe2);
+  setVal('s-mahngebuehr-3', settings.mahngebuehr_stufe3);
+  setVal('s-mahnung-frist-1', settings.mahnung_frist_stufe1);
+  setVal('s-mahnung-frist-2', settings.mahnung_frist_stufe2);
+  setVal('s-mahnung-frist-3', settings.mahnung_frist_stufe3);
+  setVal('s-mahnung-text-1', settings.mahnung_text_stufe1);
+  setVal('s-mahnung-text-2', settings.mahnung_text_stufe2);
+  setVal('s-mahnung-text-3', settings.mahnung_text_stufe3);
 
   // Logo aus separater Datei laden
   if (!logoData) {
@@ -949,12 +1012,393 @@ Rechnung ${doc.nr}`;
   window.api.printPDF(html, `${typ}_${doc.nr.replace(/[^a-zA-Z0-9-]/g,'_')}.pdf`);
 }
 
+// ─── MAHNUNGEN ───────────────────────────────────────────
+let _mahnungContext = null;
+
+function mahnungStufenName(stufe) {
+  return stufe===1 ? 'Zahlungserinnerung' : stufe===2 ? 'Erste Mahnung' : 'Letzte Mahnung';
+}
+
+function berechneVerzugszinsen(betrag, faelligDatum, bisDatum) {
+  // Vereinfachte Berechnung: betrag * (zins% / 100) * tage / 365
+  const tage = Math.max(0, Math.round((new Date(bisDatum) - new Date(faelligDatum)) / 86400000));
+  const zins = (settings.verzugszins_pct || 0) / 100;
+  return +(betrag * zins * tage / 365).toFixed(2);
+}
+
+function showMahnungModal(rechnungId) {
+  const r = data.rechnungen.find(x => x.id == rechnungId);
+  if(!r) return;
+  if(r.status === 'bezahlt') { toast('Rechnung ist bereits bezahlt'); return; }
+  _mahnungContext = { rechnungId };
+  const k = data.kunden.find(x => x.id == r.kundeId);
+  document.getElementById('mahnung-modal-title').textContent = 'Mahnung – Rechnung ' + r.nr;
+  document.getElementById('mahnung-modal-info').innerHTML =
+    `<strong>${k?k.name:r.kunde}</strong> · Rechnungsdatum ${r.datum} · Fällig ${r.faellig||'—'} · Betrag ${fmt(r.gesamt)}` +
+    (r.mahnstufe ? `<br>Bereits gesendet: ${mahnungStufenName(r.mahnstufe)}` : '');
+
+  // Stufen-Select: schon erreichte Stufen ausblenden
+  const sel = document.getElementById('mahnung-stufe-select');
+  const nextStufe = Math.min(3, (r.mahnstufe||0) + 1);
+  sel.innerHTML = '';
+  for(let i = nextStufe; i <= 3; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `Stufe ${i} – ${mahnungStufenName(i)}`;
+    sel.appendChild(opt);
+  }
+  sel.onchange = () => aktualisiereMahnungVorschau(r);
+  aktualisiereMahnungVorschau(r);
+  document.getElementById('mahnung-modal').style.display = 'flex';
+}
+
+function aktualisiereMahnungVorschau(r) {
+  const stufe = parseInt(document.getElementById('mahnung-stufe-select').value);
+  const gebuehr = stufe===1 ? (settings.mahngebuehr_stufe1||0) : stufe===2 ? (settings.mahngebuehr_stufe2||0) : (settings.mahngebuehr_stufe3||0);
+  const frist = stufe===1 ? (settings.mahnung_frist_stufe1||7) : stufe===2 ? (settings.mahnung_frist_stufe2||7) : (settings.mahnung_frist_stufe3||7);
+  const heute = today();
+  const zinsen = (stufe >= 2 && r.faellig) ? berechneVerzugszinsen(r.gesamt, r.faellig, heute) : 0;
+  const neueFaellig = addDays(heute, frist);
+  // Bisherige Gebühren (aus früheren Mahnstufen) bleiben Teil der Gesamtforderung
+  const vorigeGebuehren = (r.mahnungen||[]).reduce((sum,m) => sum + (m.gebuehr||0), 0);
+  const gesamt = +(r.gesamt + vorigeGebuehren + gebuehr + zinsen).toFixed(2);
+  const preview = document.getElementById('mahnung-preview');
+  preview.innerHTML = `
+    <div><strong>${mahnungStufenName(stufe)}</strong></div>
+    <div>Offener Rechnungsbetrag: <strong>${fmt(r.gesamt)}</strong></div>
+    ${vorigeGebuehren>0?`<div>Bisherige Mahngebühren: <strong>${fmt(vorigeGebuehren)}</strong></div>`:''}
+    ${gebuehr>0?`<div>Mahngebühr (Stufe ${stufe}): <strong>${fmt(gebuehr)}</strong></div>`:''}
+    ${zinsen>0?`<div>Verzugszinsen (${(settings.verzugszins_pct||0).toLocaleString('de-DE')}% p.a.): <strong>${fmt(zinsen)}</strong></div>`:''}
+    <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">Gesamtforderung: <strong>${fmt(gesamt)}</strong></div>
+    <div style="margin-top:6px">Neue Zahlungsfrist: <strong>${neueFaellig}</strong> (${frist} Tage)</div>
+  `;
+}
+
+function hideMahnungModal() {
+  document.getElementById('mahnung-modal').style.display = 'none';
+  _mahnungContext = null;
+}
+
+function erstelleMahnung() {
+  if(!_mahnungContext) return;
+  const r = data.rechnungen.find(x => x.id == _mahnungContext.rechnungId);
+  if(!r) return;
+  const stufe = parseInt(document.getElementById('mahnung-stufe-select').value);
+  const gebuehr = stufe===1 ? (settings.mahngebuehr_stufe1||0) : stufe===2 ? (settings.mahngebuehr_stufe2||0) : (settings.mahngebuehr_stufe3||0);
+  const frist = stufe===1 ? (settings.mahnung_frist_stufe1||7) : stufe===2 ? (settings.mahnung_frist_stufe2||7) : (settings.mahnung_frist_stufe3||7);
+  const heute = today();
+  const zinsen = (stufe >= 2 && r.faellig) ? berechneVerzugszinsen(r.gesamt, r.faellig, heute) : 0;
+  const neueFaellig = addDays(heute, frist);
+
+  const mahnungNr = (settings.mahnung_prefix||'M') + '-' + new Date().getFullYear() + '-' + r.nr.replace(/[^a-zA-Z0-9]/g,'') + '-S' + stufe;
+  const vorigeGebuehren = (r.mahnungen||[]).reduce((sum,m) => sum + (m.gebuehr||0), 0);
+  const mahnung = {
+    id: Date.now().toString(),
+    nr: mahnungNr,
+    stufe,
+    datum: heute,
+    faellig: neueFaellig,
+    gebuehr,
+    vorigeGebuehren: +vorigeGebuehren.toFixed(2),
+    zinsen,
+    gesamt: +(r.gesamt + vorigeGebuehren + gebuehr + zinsen).toFixed(2)
+  };
+  if(!r.mahnungen) r.mahnungen = [];
+  r.mahnungen.push(mahnung);
+  r.mahnstufe = stufe;
+  save();
+
+  const k = data.kunden.find(x => x.id == r.kundeId);
+  druckeMahnung(r, k, mahnung);
+  hideMahnungModal();
+  renderRechnungen();
+  toast(mahnungStufenName(stufe) + ' erstellt');
+}
+
+function druckeMahnung(rechnung, kunde, mahnung) {
+  const s = settings;
+  function formatDatum(d) {
+    if(!d) return '—';
+    const parts = d.split('-');
+    if(parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    return d;
+  }
+  const text = mahnung.stufe===1 ? (s.mahnung_text_stufe1||'') : mahnung.stufe===2 ? (s.mahnung_text_stufe2||'') : (s.mahnung_text_stufe3||'');
+  const titel = mahnungStufenName(mahnung.stufe);
+  const tplColorHighlight = s.tpl_color_highlight || '#000000';
+  const tplColorText = s.tpl_color_text || '#333333';
+  const tplColorBg = s.tpl_color_bg || '#ffffff';
+  const tplColorTableBg = s.tpl_color_table_bg || '#fef9e6';
+  const tplGreeting = s.tpl_greeting || 'Mit freundlichen Grüßen';
+  const tplLogoSize = s.tpl_logo_size || '140';
+  const kundeAdresse = kunde ? (kunde.adresse || '').split('\n') : [];
+  const firmaAdresse = (s.adresse || '').split('\n');
+  const logoImg = logoData ? `<img src="${logoData}" style="max-width:${tplLogoSize}px;max-height:80px;object-fit:contain">` : '';
+
+  // Hervorhebungsfarbe je Stufe (visuelle Eskalation)
+  const stufenColor = mahnung.stufe===1 ? '#1f7a1f' : mahnung.stufe===2 ? '#b8860b' : '#a32d2d';
+
+  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${titel} ${mahnung.nr}</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:${tplColorBg}}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:${tplColorText};padding:40px 50px;line-height:1.5}
+    .absender-zeile{font-size:8px;color:#666;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:10px}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+    .logo-container{text-align:right}
+    .titel-block{margin:20px 0 30px 0;padding:14px 16px;border-left:4px solid ${stufenColor};background:${tplColorTableBg}}
+    .titel-block h1{font-size:18px;color:${stufenColor};margin-bottom:4px}
+    .titel-block .sub{font-size:11px;color:#666}
+    .info-container{display:flex;justify-content:space-between;margin:20px 0;gap:20px}
+    .kunde-adresse{width:50%}
+    .meta-info{width:45%;font-size:9px}
+    .meta-info table{width:100%}
+    .meta-info td{padding:4px 0;vertical-align:top}
+    .meta-info td:first-child{color:#666;width:55%;text-transform:uppercase;font-size:8px}
+    .meta-info td:last-child{text-align:right;color:${tplColorHighlight};font-weight:500}
+    .anrede{margin:25px 0 10px 0}
+    .body-text{font-size:10px;line-height:1.7;margin-bottom:20px}
+    table.aufstellung{width:100%;border-collapse:collapse;margin:15px 0}
+    table.aufstellung th{background:${tplColorTableBg};color:${tplColorHighlight};padding:8px;font-size:9px;text-align:left}
+    table.aufstellung th.right{text-align:right}
+    table.aufstellung td{padding:8px;border-bottom:1px solid #e0e0e0;font-size:10px}
+    table.aufstellung td.right{text-align:right}
+    table.aufstellung .total-row td{font-weight:700;border-top:2px solid ${stufenColor};border-bottom:none;background:${tplColorTableBg};color:${tplColorHighlight}}
+    .hinweis{margin-top:20px;padding:10px;background:#fff8e1;border-left:3px solid #f0c040;font-size:10px}
+    .stufe3-warnung{margin-top:20px;padding:12px;border:2px solid ${stufenColor};border-radius:4px;font-size:10px;color:${stufenColor};font-weight:500}
+    .footer-section{margin-top:30px;padding-top:15px;border-top:1px solid #ddd;font-size:9px;color:#666}
+    .page-number{position:fixed;bottom:20px;right:50px;font-size:8px;color:#999}
+  </style></head><body>
+
+  <div class="absender-zeile">${s.name||'Firmenname'} / ${firmaAdresse[0]||''} / ${firmaAdresse[1]||''}</div>
+
+  <div class="header">
+    <div></div>
+    <div class="logo-container">${logoImg}</div>
+  </div>
+
+  <div class="info-container">
+    <div class="kunde-adresse">
+      <div>${kunde?kunde.name:rechnung.kunde}</div>
+      <div>${kundeAdresse[0]||''}</div>
+      <div>${kundeAdresse[1]||''}</div>
+      <div>Deutschland</div>
+    </div>
+    <div class="meta-info">
+      <table>
+        <tr><td>Mahnungs-Nr.</td><td>${mahnung.nr}</td></tr>
+        <tr><td>Datum</td><td>${formatDatum(mahnung.datum)}</td></tr>
+        <tr><td>Zahlungsfrist</td><td>${formatDatum(mahnung.faellig)}</td></tr>
+        <tr><td>Ihre Kundennummer</td><td>${kunde?(kunde.kundennummer||'—'):'—'}</td></tr>
+        <tr><td>Bezugsrechnung</td><td>${rechnung.nr}</td></tr>
+        <tr><td>Rechnungsdatum</td><td>${formatDatum(rechnung.datum)}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="titel-block">
+    <h1>${titel}</h1>
+    <div class="sub">zu Rechnung ${rechnung.nr} vom ${formatDatum(rechnung.datum)} · ursprüngliche Fälligkeit: ${formatDatum(rechnung.faellig)}</div>
+  </div>
+
+  <div class="anrede">Sehr geehrte Damen und Herren,</div>
+  <div class="body-text">${text}</div>
+
+  <table class="aufstellung">
+    <thead><tr>
+      <th>Position</th>
+      <th class="right">Betrag</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Offener Rechnungsbetrag (Rechnung ${rechnung.nr})</td><td class="right">${Number(rechnung.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>
+      ${mahnung.vorigeGebuehren>0 ? `<tr><td>Bisherige Mahngebühren (frühere Mahnstufen)</td><td class="right">${Number(mahnung.vorigeGebuehren).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>` : ''}
+      ${mahnung.gebuehr>0 ? `<tr><td>Mahngebühr (Stufe ${mahnung.stufe})</td><td class="right">${Number(mahnung.gebuehr).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>` : ''}
+      ${mahnung.zinsen>0 ? `<tr><td>Verzugszinsen (${(s.verzugszins_pct||0).toLocaleString('de-DE')}% p.a.)</td><td class="right">${Number(mahnung.zinsen).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>` : ''}
+      <tr class="total-row"><td>Gesamtforderung – fällig bis ${formatDatum(mahnung.faellig)}</td><td class="right">${Number(mahnung.gesamt).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} EUR</td></tr>
+    </tbody>
+  </table>
+
+  ${mahnung.stufe===1 ? `<div class="hinweis">Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie diese Erinnerung bitte als gegenstandslos.</div>` : ''}
+
+  ${mahnung.stufe===3 ? `<div class="stufe3-warnung">⚠ Letzte Mahnung: Sollte der Gesamtbetrag nicht bis zum <strong>${formatDatum(mahnung.faellig)}</strong> auf unserem Konto eingegangen sein, werden wir ohne weitere Ankündigung das gerichtliche Mahnverfahren einleiten bzw. die Forderung an ein Inkassobüro übergeben. Sämtliche dadurch entstehenden weiteren Kosten gehen zu Ihren Lasten.</div>` : ''}
+
+  <div style="margin-top:20px">Bitte überweisen Sie den Gesamtbetrag unter Angabe der Rechnungsnummer <strong>${rechnung.nr}</strong> auf das folgende Konto.</div>
+
+  <div style="margin-top:25px">${tplGreeting}<br>${s.name||''} ${s.mail||''}</div>
+
+  ${s.iban ? `<div class="footer-section"><strong>Bankverbindung:</strong> ${s.bank||''} | IBAN: ${s.iban} ${s.bic?'| BIC: '+s.bic:''} | Kontoinhaber: ${s.kontoinhaber||s.name||''}</div>` : ''}
+
+  <div class="page-number">1/1</div>
+  </body></html>`;
+
+  window.api.printPDF(html, `Mahnung_${mahnung.nr.replace(/[^a-zA-Z0-9-]/g,'_')}.pdf`);
+}
+
+// ─── EÜR ─────────────────────────────────────────────────
+// Zufluss-Datum gemäß §4 Abs. 3 EStG: bezahltAm bei bezahlten Rechnungen, sonst datum (Fallback Altdaten)
+function einnahmeDatum(r) { return r.bezahltAm || r.datum; }
+
+function initEUER() {
+  // Jahres-Dropdown aufbauen aus vorhandenen Daten
+  const sel = document.getElementById('euer-jahr');
+  const jahre = new Set();
+  data.rechnungen.forEach(r => { const d = einnahmeDatum(r); if(d) jahre.add(d.substring(0,4)); });
+  data.ausgaben.forEach(a => { if(a.datum) jahre.add(a.datum.substring(0,4)); });
+  const currentYear = new Date().getFullYear().toString();
+  jahre.add(currentYear);
+  const sortiert = [...jahre].sort().reverse();
+  const aktuellWert = sel.value || currentYear;
+  sel.innerHTML = sortiert.map(j => `<option value="${j}"${j===aktuellWert?' selected':''}>${j}</option>`).join('');
+  renderEUER();
+}
+
+function renderEUER() {
+  const jahr = document.getElementById('euer-jahr').value || new Date().getFullYear().toString();
+  // Einnahmen: bezahlte Rechnungen, gefiltert nach Zahlungsdatum (Zufluss-Prinzip)
+  const einnahmenList = data.rechnungen.filter(r => r.status==='bezahlt' && einnahmeDatum(r) && einnahmeDatum(r).startsWith(jahr));
+  const ausgabenList = data.ausgaben.filter(a => a.datum && a.datum.startsWith(jahr));
+  // Offene Forderungen: nach Rechnungsdatum (sonst gibt es kein Datum)
+  const offenList = data.rechnungen.filter(r => r.status==='offen' && r.datum && r.datum.startsWith(jahr));
+
+  const sumEin = einnahmenList.reduce((s,r) => s+r.gesamt, 0);
+  const sumAus = ausgabenList.reduce((s,a) => s+a.betrag, 0);
+  const sumOffen = offenList.reduce((s,r) => s+r.gesamt, 0);
+  document.getElementById('euer-einnahmen').textContent = fmt(sumEin);
+  document.getElementById('euer-ausgaben').textContent = fmt(sumAus);
+  document.getElementById('euer-gewinn').textContent = fmt(sumEin - sumAus);
+  document.getElementById('euer-offen').textContent = fmt(sumOffen);
+
+  // Einnahmen-Tabelle (Zahlungsdatum)
+  const einTb = document.getElementById('euer-einnahmen-tbody');
+  einTb.innerHTML = einnahmenList.length
+    ? einnahmenList.slice().sort((a,b)=>einnahmeDatum(a).localeCompare(einnahmeDatum(b)))
+        .map(r => `<tr><td>${einnahmeDatum(r)}</td><td>${r.nr}</td><td>${r.kunde}</td><td style="text-align:right">${fmt(r.gesamt)}</td></tr>`).join('')
+    : '<tr><td colspan="4" class="empty">Keine Einnahmen</td></tr>';
+
+  // Ausgaben nach Kategorie
+  const katSum = {};
+  ausgabenList.forEach(a => { katSum[a.kategorie] = (katSum[a.kategorie] || 0) + a.betrag; });
+  const katEintraege = Object.entries(katSum).sort((a,b) => b[1] - a[1]);
+  const katTb = document.getElementById('euer-kat-tbody');
+  katTb.innerHTML = katEintraege.length
+    ? katEintraege.map(([kat, betrag]) => {
+        const anteil = sumAus > 0 ? (betrag / sumAus * 100).toFixed(1) : '0,0';
+        return `<tr><td>${kat}</td><td style="text-align:right">${fmt(betrag)}</td><td style="text-align:right">${anteil.replace('.',',')}%</td></tr>`;
+      }).join('')
+    : '<tr><td colspan="3" class="empty">Keine Ausgaben</td></tr>';
+
+  // Detail-Ausgaben
+  const ausTb = document.getElementById('euer-ausgaben-tbody');
+  ausTb.innerHTML = ausgabenList.length
+    ? ausgabenList.slice().sort((a,b)=>a.datum.localeCompare(b.datum))
+        .map(a => `<tr><td>${a.datum}</td><td>${a.beschreibung||'—'}</td><td><span class="badge badge-neutral">${a.kategorie}</span></td><td style="text-align:right">${fmt(a.betrag)}</td></tr>`).join('')
+    : '<tr><td colspan="4" class="empty">Keine Ausgaben</td></tr>';
+}
+
+function druckeEUER() {
+  const jahr = document.getElementById('euer-jahr').value || new Date().getFullYear().toString();
+  const einnahmenList = data.rechnungen.filter(r => r.status==='bezahlt' && einnahmeDatum(r) && einnahmeDatum(r).startsWith(jahr));
+  const ausgabenList = data.ausgaben.filter(a => a.datum && a.datum.startsWith(jahr));
+  const sumEin = einnahmenList.reduce((s,r) => s+r.gesamt, 0);
+  const sumAus = ausgabenList.reduce((s,a) => s+a.betrag, 0);
+  const gewinn = sumEin - sumAus;
+
+  const katSum = {};
+  ausgabenList.forEach(a => { katSum[a.kategorie] = (katSum[a.kategorie] || 0) + a.betrag; });
+  const katEintraege = Object.entries(katSum).sort((a,b) => b[1] - a[1]);
+
+  const s = settings;
+  const tplColorHighlight = s.tpl_color_highlight || '#000000';
+  const tplColorText = s.tpl_color_text || '#333333';
+  const tplColorBg = s.tpl_color_bg || '#ffffff';
+  const tplColorTableBg = s.tpl_color_table_bg || '#fef9e6';
+  const firmaAdresse = (s.adresse || '').split('\n');
+
+  function formatDatum(d) {
+    if(!d) return '—';
+    const parts = d.split('-');
+    if(parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    return d;
+  }
+  const fmtEUR = n => Number(n).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' EUR';
+
+  const einnahmenRows = einnahmenList.slice().sort((a,b)=>einnahmeDatum(a).localeCompare(einnahmeDatum(b)))
+    .map(r => `<tr><td>${formatDatum(einnahmeDatum(r))}</td><td>${r.nr}</td><td>${r.kunde}</td><td style="text-align:right">${fmtEUR(r.gesamt)}</td></tr>`).join('');
+
+  const katRows = katEintraege.map(([kat, betrag]) => {
+    const anteil = sumAus > 0 ? (betrag / sumAus * 100).toFixed(1).replace('.',',') : '0,0';
+    return `<tr><td>${kat}</td><td style="text-align:right">${fmtEUR(betrag)}</td><td style="text-align:right">${anteil}%</td></tr>`;
+  }).join('');
+
+  const ausgabenRows = ausgabenList.slice().sort((a,b)=>a.datum.localeCompare(b.datum))
+    .map(a => `<tr><td>${formatDatum(a.datum)}</td><td>${a.beschreibung||'—'}</td><td>${a.kategorie}</td><td style="text-align:right">${fmtEUR(a.betrag)}</td></tr>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>EÜR ${jahr}</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:${tplColorBg}}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:${tplColorText};padding:40px 50px;line-height:1.5}
+    .absender{font-size:8px;color:#666;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:20px}
+    h1{font-size:20px;color:${tplColorHighlight};margin-bottom:4px}
+    .sub{font-size:11px;color:#666;margin-bottom:20px}
+    .summary{display:flex;gap:12px;margin:20px 0}
+    .summary-card{flex:1;padding:12px;background:${tplColorTableBg};border-radius:4px;text-align:center}
+    .summary-card .lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.4px;color:#666}
+    .summary-card .val{font-size:16px;font-weight:600;color:${tplColorHighlight};margin-top:4px}
+    .summary-card.gewinn{border:2px solid ${tplColorHighlight}}
+    h2{font-size:13px;color:${tplColorHighlight};margin:25px 0 10px;border-bottom:1px solid #ccc;padding-bottom:4px}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9.5px}
+    th{background:${tplColorTableBg};color:${tplColorHighlight};padding:8px;text-align:left;font-size:9px;font-weight:600}
+    td{padding:6px 8px;border-bottom:1px solid #eee}
+    tfoot td{font-weight:700;border-top:2px solid ${tplColorHighlight};background:${tplColorTableBg};color:${tplColorHighlight}}
+    .footer-text{margin-top:30px;font-size:9px;color:#666;border-top:1px solid #ddd;padding-top:10px}
+    @page{margin:0}
+  </style></head><body>
+    <div class="absender">${s.name||'Firmenname'} / ${firmaAdresse[0]||''} / ${firmaAdresse[1]||''}${s.steuernr?' / Steuer-Nr. '+s.steuernr:''}</div>
+    <h1>Einnahmen-Überschuss-Rechnung</h1>
+    <div class="sub">Geschäftsjahr ${jahr} · gemäß §4 Abs. 3 EStG · Kleinunternehmerregelung §19 UStG</div>
+
+    <div class="summary">
+      <div class="summary-card"><div class="lbl">Betriebseinnahmen</div><div class="val">${fmtEUR(sumEin)}</div></div>
+      <div class="summary-card"><div class="lbl">Betriebsausgaben</div><div class="val">${fmtEUR(sumAus)}</div></div>
+      <div class="summary-card gewinn"><div class="lbl">${gewinn>=0?'Gewinn':'Verlust'}</div><div class="val">${fmtEUR(gewinn)}</div></div>
+    </div>
+
+    <h2>Betriebseinnahmen (bezahlte Rechnungen ${jahr})</h2>
+    <table>
+      <thead><tr><th>Datum</th><th>Rechnung</th><th>Kunde</th><th style="text-align:right">Betrag</th></tr></thead>
+      <tbody>${einnahmenRows || `<tr><td colspan="4" style="text-align:center;color:#999;padding:14px">Keine Einnahmen</td></tr>`}</tbody>
+      <tfoot><tr><td colspan="3">Summe Betriebseinnahmen</td><td style="text-align:right">${fmtEUR(sumEin)}</td></tr></tfoot>
+    </table>
+
+    <h2>Betriebsausgaben nach Kategorie</h2>
+    <table>
+      <thead><tr><th>Kategorie</th><th style="text-align:right">Betrag</th><th style="text-align:right">Anteil</th></tr></thead>
+      <tbody>${katRows || `<tr><td colspan="3" style="text-align:center;color:#999;padding:14px">Keine Ausgaben</td></tr>`}</tbody>
+      <tfoot><tr><td>Summe Betriebsausgaben</td><td style="text-align:right">${fmtEUR(sumAus)}</td><td style="text-align:right">100,0%</td></tr></tfoot>
+    </table>
+
+    <h2>Betriebsausgaben – Detail</h2>
+    <table>
+      <thead><tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th style="text-align:right">Betrag</th></tr></thead>
+      <tbody>${ausgabenRows || `<tr><td colspan="4" style="text-align:center;color:#999;padding:14px">Keine Ausgaben</td></tr>`}</tbody>
+    </table>
+
+    <div class="footer-text">
+      Erstellt am ${formatDatum(today())} · Diese Aufstellung dient als Anlage zur Steuererklärung.
+      Umsatzsteuer wird gemäß §19 UStG (Kleinunternehmerregelung) nicht erhoben.
+    </div>
+  </body></html>`;
+
+  window.api.printPDF(html, `EUER_${jahr}.pdf`);
+  toast('EÜR PDF wird erstellt');
+}
+
 // ─── CSV EXPORT ──────────────────────────────────────────
 async function exportCSV() {
   let csv='Typ;Datum;Beschreibung;Kategorie;Betrag (€);Status;Kunde\n';
   data.rechnungen.forEach(r=>{csv+=`Einnahme;${r.datum};Rechnung ${r.nr};;${r.gesamt.toFixed(2).replace('.',',')};${r.status==='bezahlt'?'Bezahlt':'Offen'};${r.kunde}\n`});
   data.angebote.forEach(a=>{csv+=`Angebot;${a.datum};Angebot ${a.nr};;${a.gesamt.toFixed(2).replace('.',',')};${a.status};${a.kunde}\n`});
   data.ausgaben.forEach(a=>{csv+=`Ausgabe;${a.datum};${a.beschreibung};${a.kategorie};-${a.betrag.toFixed(2).replace('.',',')};;;\n`});
+  data.rechnungen.forEach(r=>{(r.mahnungen||[]).forEach(m=>{csv+=`Mahnung;${m.datum};${m.nr} (zu ${r.nr}) – ${mahnungStufenName(m.stufe)};;${m.gesamt.toFixed(2).replace('.',',')};;${r.kunde}\n`});});
   const ein=data.rechnungen.filter(r=>r.status==='bezahlt').reduce((s,r)=>s+r.gesamt,0);
   const aus=data.ausgaben.reduce((s,a)=>s+a.betrag,0);
   csv+=`\n;;Einnahmen gesamt (bezahlt);;${ein.toFixed(2).replace('.',',')};;`;
