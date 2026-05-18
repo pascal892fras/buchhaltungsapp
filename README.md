@@ -1,0 +1,2 @@
+# buchhaltungsapp
+eigene buchhaltung minimal
