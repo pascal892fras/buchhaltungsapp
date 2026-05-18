@@ -4,6 +4,7 @@
 
 import { state, saveSettings, loadLogo, saveLogo } from './state.js';
 import { toast, toBase64 } from './helpers.js';
+import { encryptSettings, decryptSettings, maskIBAN } from './encryption.js';
 
 export async function speichernSettings() {
   // Firmendaten
@@ -63,6 +64,7 @@ export async function speichernSettings() {
     }
   });
 
+  state.settings = encryptSettings(state.settings);
   await saveSettings();
   const c = document.getElementById('s-confirm');
   if (c) {
@@ -73,6 +75,9 @@ export async function speichernSettings() {
 }
 
 export async function ladeSettings() {
+  // Entschlüssele sensible Daten
+  state.settings = decryptSettings(state.settings);
+
   // ✅ API-Keys laden
   const anthropicKey = document.getElementById('s-anthropic-api-key');
   if (anthropicKey) {

@@ -1,5 +1,5 @@
 /**
- * Ausgabenmanagement mit LOKALER OCR (Tesseract.js)
+ * Ausgabenmanagement mit LOKALER OCR (Tesseract.js via CDN)
  * KEIN API-KEY erforderlich – 100% offline
  */
 
@@ -7,8 +7,6 @@ import { state, saveData } from './state.js';
 import { fmt, today, toast } from './helpers.js';
 import { showSection } from './navigation.js';
 
-// OCR wird nur bei Bedarf importiert (Tesseract.js ist groß)
-let Tesseract = null;
 let ocrWorker = null;
 
 export function showAusgabeForm() {
@@ -38,41 +36,37 @@ export function renderAusgaben() {
     tb.innerHTML = '<tr><td colspan="5" class="empty">Noch keine Ausgaben</td></tr>';
     return;
   }
-  tb.innerHTML = state.data.ausgaben
-    .slice()
-    .reverse()
-    .map(
-      (a) => `<tr>
-    <td>${a.datum}</td>
-    <td>${a.beschreibung}</td>
-    <td><span class="badge badge-neutral">${a.kategorie}</span></td>
-    <td>${fmt(a.betrag)}</td>
-    <td><button class="btn btn-sm btn-danger" onclick="loescheAusgabe('${a.id}')">✕</button></td>
-  </tr>`
-    )
-    .join('');
+  tb.innerHTML = state.data.ausgaben.slice().reverse().map((a) =>
+    `<tr><td>${a.datum}</td><td>${a.beschreibung}</td><td><span class="badge badge-neutral">${a.kategorie}</span></td><td>${fmt(a.betrag)}</td><td><button class="btn btn-sm btn-danger" onclick="loescheAusgabe('${a.id}')">✕</button></td></tr>`
+  ).join('');
 }
 
 export function loescheAusgabe(id) {
-  if (confirm('Ausgabe löschen?')) {
-    state.data.ausgaben = state.data.ausgaben.filter((a) => a.id !== id);
+  if (confirm('Löschen?')) {
+    state.data.ausgaben = state.data.ausgaben.filter((a) => a.id != id);
     saveData();
     renderAusgaben();
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// LOKALE OCR MIT TESSERACT.JS
+// LOKALE OCR MIT TESSERACT.JS (via CDN)
 // ═══════════════════════════════════════════════════════════════════
 
 async function initOCRWorker() {
   if (!ocrWorker) {
-    if (!Tesseract) {
-      Tesseract = (await import('tesseract.js')).default;
+    if (!window.Tesseract) {
+      throw new Error('Tesseract.js Bibliothek nicht geladen');
     }
-    ocrWorker = await Tesseract.createWorker();
-    await ocrWorker.loadLanguage('deu');
-    await ocrWorker.initialize('deu');
+    try {
+      ocrWorker = await window.Tesseract.createWorker();
+      await ocrWorker.loadLanguage('deu');
+      await ocrWorker.initialize('deu');
+      console.log('✓ OCR-Worker initialisiert');
+    } catch (error) {
+      console.error('OCR-Worker Fehler:', error);
+      throw new Error('OCR-System konnte nicht initialisiert werden: ' + error.message);
+    }
   }
   return ocrWorker;
 }
@@ -98,12 +92,18 @@ export async function handleUpload(input) {
       throw new Error('Datei zu groß – max 5MB');
     }
 
-    // OCR
-    statusEl.innerHTML = '<div class="spinner" style="margin-right:8px;display:inline-block"></div> Erkenne Text... (30-60 Sekunden)';
+    // Starte OCR
+    statusEl.innerHTML = '<div class="spinner" style="margin-right:8px;display:inline-block"></div> Lade Tesseract.js... (beim ersten Mal ~2-5 Min)';
     const worker = await initOCRWorker();
+
+    statusEl.innerHTML = '<div class="spinner" style="margin-right:8px;display:inline-block"></div> Erkenne Text... (30-60 Sekunden)';
+
     const result = await worker.recognize(file);
     const text = result.data.text;
     const confidence = result.data.confidence;
+
+    console.log('✓ OCR-Ergebnis:', text);
+    console.log('✓ Konfidenz:', confidence);
 
     if (!text?.trim()?.length) {
       throw new Error('Kein Text erkannt. Klareres Foto verwenden.');
@@ -129,7 +129,9 @@ export async function handleUpload(input) {
 
     statusEl.style.display = 'none';
     resultEl.style.display = 'block';
-    toast(`✓ Text erkannt (${Math.round(confidence)}% Sicherheit)`);
+
+    const confPercent = Math.round(confidence);
+    toast(`✓ Text erkannt (${confPercent}% Sicherheit)`);
 
   } catch (error) {
     console.error('OCR-Fehler:', error);
@@ -240,7 +242,7 @@ export function ausgabeAusOCR() {
   resetUpload();
   renderAusgaben();
   showSection('ausgaben');
-  toast('✓ Ausgabe gespeichert');
+  toast('✓ Gespeichert');
 }
 
 export function resetUpload() {
@@ -252,7 +254,6 @@ export function resetUpload() {
   if (aiStatus) aiStatus.style.display = 'none';
 }
 
-// Global exports
 window.showAusgabeForm = showAusgabeForm;
 window.speichernAusgabe = speichernAusgabe;
 window.loescheAusgabe = loescheAusgabe;
