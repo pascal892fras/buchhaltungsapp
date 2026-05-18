@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -164,5 +165,40 @@ ipcMain.handle('print-pdf', async (_, htmlContent, filename) => {
     if (fs.existsSync(tmpHtmlPath)) fs.unlinkSync(tmpHtmlPath);
     tmpWin.destroy();
     return false;
+  }
+});
+
+// ─── SICHERHEIT: Verschlüsselte Bankdaten ─────────────────────────
+/**
+ * Verschlüsselt einen String mittels Electron's safeStorage
+ * Wird für sensitive Daten wie IBAN, BIC verwendet
+ */
+ipcMain.handle('encrypt-data', (event, plainText) => {
+  try {
+    if (!plainText || typeof plainText !== 'string') {
+      return null;
+    }
+    const encrypted = safeStorage.encryptString(plainText);
+    return encrypted.toString('base64');
+  } catch (error) {
+    console.error('Verschlüsselungs-Fehler:', error);
+    throw new Error('Daten konnten nicht verschlüsselt werden');
+  }
+});
+
+/**
+ * Entschlüsselt einen verschlüsselten String
+ */
+ipcMain.handle('decrypt-data', (event, encryptedBase64) => {
+  try {
+    if (!encryptedBase64) {
+      return null;
+    }
+    const buffer = Buffer.from(encryptedBase64, 'base64');
+    const decrypted = safeStorage.decryptString(buffer);
+    return decrypted;
+  } catch (error) {
+    console.error('Entschlüsselungs-Fehler:', error);
+    throw new Error('Daten konnten nicht entschlüsselt werden');
   }
 });
