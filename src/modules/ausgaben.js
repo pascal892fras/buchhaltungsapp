@@ -6,6 +6,7 @@
 import { state, saveData } from './state.js';
 import { fmt, today, toast } from './helpers.js';
 import { showSection } from './navigation.js';
+import { getFinalCategory, validateCategory } from './custom-categories.js';
 
 let ocrWorker = null;
 
@@ -16,18 +17,30 @@ export function showAusgabeForm() {
 }
 
 export function speichernAusgabe() {
-  const a = {
-    id: Date.now().toString(),
-    datum: document.getElementById('a-datum').value,
-    betrag: parseFloat(document.getElementById('a-betrag').value) || 0,
-    kategorie: document.getElementById('a-kat').value,
-    beschreibung: document.getElementById('a-beschr').value,
-  };
-  state.data.ausgaben.push(a);
-  saveData();
-  document.getElementById('ausgabe-form').style.display = 'none';
-  renderAusgaben();
-  toast('✓ Ausgabe gespeichert');
+  try {
+    // Validiere dass Kategorie eingegeben wurde
+    validateCategory('a-kat', 'a-custom-kat');
+
+    // Hole finale Kategorie (custom oder normal)
+    const finalCategory = getFinalCategory('a-kat', 'a-custom-kat');
+
+    const a = {
+      id: Date.now().toString(),
+      datum: document.getElementById('a-datum').value,
+      betrag: parseFloat(document.getElementById('a-betrag').value) || 0,
+      kategorie: finalCategory.kategorieName,
+      kategorieId: finalCategory.kategorieId,
+      beschreibung: document.getElementById('a-beschr').value,
+    };
+
+    state.data.ausgaben.push(a);
+    saveData();
+    document.getElementById('ausgabe-form').style.display = 'none';
+    renderAusgaben();
+    toast('✓ Ausgabe gespeichert');
+  } catch (e) {
+    toast('❌ ' + e.message);
+  }
 }
 
 export function renderAusgaben() {
@@ -214,35 +227,45 @@ function guessCategory(text) {
 }
 
 export function ausgabeAusOCR() {
-  const datum = document.getElementById('ocr-datum')?.value;
-  const betragStr = document.getElementById('ocr-betrag')?.value;
-  const kategorie = document.getElementById('ocr-kat')?.value;
-  const beschreibung = document.getElementById('ocr-beschr')?.value || 'Beleg';
+  try {
+    // Validiere dass Kategorie eingegeben wurde
+    validateCategory('ocr-kat', 'ocr-custom-kat');
 
-  if (!datum || !betragStr) {
-    toast('❌ Datum und Betrag erforderlich');
-    return;
+    const datum = document.getElementById('ocr-datum')?.value;
+    const betragStr = document.getElementById('ocr-betrag')?.value;
+    const beschreibung = document.getElementById('ocr-beschr')?.value || 'Beleg';
+
+    if (!datum || !betragStr) {
+      toast('❌ Datum und Betrag erforderlich');
+      return;
+    }
+
+    const betrag = parseFloat(betragStr);
+    if (isNaN(betrag) || betrag <= 0) {
+      toast('❌ Betrag muss größer als 0 sein');
+      return;
+    }
+
+    // Hole finale Kategorie (custom oder normal)
+    const finalCategory = getFinalCategory('ocr-kat', 'ocr-custom-kat');
+
+    const a = {
+      id: Date.now().toString(),
+      datum,
+      betrag,
+      kategorie: finalCategory.kategorieName,
+      kategorieId: finalCategory.kategorieId,
+      beschreibung,
+    };
+
+    state.data.ausgaben.push(a);
+    saveData();
+    resetUpload();
+    renderAusgaben();
+    toast('✓ Ausgabe aus OCR übernommen');
+  } catch (e) {
+    toast('❌ ' + e.message);
   }
-
-  const betrag = parseFloat(betragStr);
-  if (isNaN(betrag) || betrag <= 0) {
-    toast('❌ Betrag muss größer als 0 sein');
-    return;
-  }
-
-  state.data.ausgaben.push({
-    id: Date.now().toString(),
-    datum,
-    betrag,
-    kategorie,
-    beschreibung,
-  });
-
-  saveData();
-  resetUpload();
-  renderAusgaben();
-  showSection('ausgaben');
-  toast('✓ Gespeichert');
 }
 
 export function resetUpload() {

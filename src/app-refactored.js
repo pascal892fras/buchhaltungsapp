@@ -26,6 +26,27 @@ import { toast } from './modules/helpers.js';
 import { showSection } from './modules/navigation.js';
 import { updateDashboard } from './modules/dashboard.js';
 import { applyDarkmode } from './modules/settings.js';
+import { getKategorienHtml } from './modules/kategorien.js';
+import { initializeCustomCategoryHandlers } from './modules/custom-categories.js';
+
+// ─── KATEGORIEN INITIALISIEREN ──────────────────────────
+function initializeCategorySelects() {
+  try {
+    const kategorienHtml = getKategorienHtml();
+
+    // Select-Elemente mit Kategorien füllen
+    const selectIds = ['a-kat', 'ocr-kat'];
+
+    selectIds.forEach((id) => {
+      const select = document.getElementById(id);
+      if (select) {
+        select.innerHTML = kategorienHtml;
+      }
+    });
+  } catch (e) {
+    console.error('Fehler beim Initialisieren der Kategorien:', e);
+  }
+}
 
 // ─── INITIALISIERUNG ─────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -40,6 +61,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Render Initial Dashboard
     updateDashboard();
     showSection('dashboard');
+
+    // Initialisiere Kategorien-Selects
+    initializeCategorySelects();
+
+    // Initialisiere Custom Category Handler
+    initializeCustomCategoryHandlers();
 
     // Lade Logo asynchron
     setTimeout(async () => {

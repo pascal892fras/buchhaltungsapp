@@ -211,8 +211,14 @@
         </div>
         <div class="grid2">
           <div><label>Kategorie</label>
-            <select id="a-kat"><option>Büromaterial</option><option>Software/IT</option><option>Fahrtkosten</option><option>Telefon/Internet</option><option>Weiterbildung</option><option>Werbung</option><option>Sonstiges</option></select>
+            <select id="a-kat"><option>Lädt...</option></select>
           </div>
+          <div id="a-custom-kat-container" style="display:none">
+            <label>Kategoriename (eigene Eingabe)</label>
+            <input type="text" id="a-custom-kat" placeholder="z.B. Büroausstattung, Versicherung, etc.">
+          </div>
+        </div>
+        <div class="grid2">
           <div><label>Beschreibung</label><input type="text" id="a-beschr"></div>
         </div>
         <div style="margin-top:12px"><button class="btn btn-primary" onclick="speichernAusgabe()">Speichern</button></div>
@@ -288,8 +294,12 @@
           <div class="grid2">
             <div><label>Beschreibung</label><input type="text" id="ocr-beschr"></div>
             <div><label>Kategorie</label>
-              <select id="ocr-kat"><option>Büromaterial</option><option>Software/IT</option><option>Fahrtkosten</option><option>Telefon/Internet</option><option>Weiterbildung</option><option>Werbung</option><option>Sonstiges</option></select>
+              <select id="ocr-kat"><option>Lädt...</option></select>
             </div>
+          </div>
+          <div id="ocr-custom-kat-container" style="display:none;margin-top:12px">
+            <label>Kategoriename (eigene Eingabe)</label>
+            <input type="text" id="ocr-custom-kat" placeholder="z.B. Büroausstattung, Versicherung, etc.">
           </div>
           <div style="display:flex;gap:8px;margin-top:12px">
             <button class="btn btn-primary" onclick="ausgabeAusOCR()">Als Ausgabe übernehmen</button>
