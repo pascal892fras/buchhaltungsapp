@@ -309,8 +309,29 @@ export function erstelleMahnung() {
 }
 
 export function druckeMahnung(rechnung, kunde, mahnung) {
-  // Importiert aus templates.js
-  window.druckeMahnung(rechnung, kunde, mahnung);
+  // KISS: Mahnung als erweitertes Dokument bauen und druckeDokument nutzen
+  const mahnungDoc = {
+    ...rechnung,
+    nr: mahnung.nr,
+    datum: mahnung.datum,
+    faellig: mahnung.faellig,
+    istMahnung: true,
+    mahnstufe: mahnung.stufe,
+    mahnGebuehr: mahnung.gebuehr || 0,
+    mahnZinsen: mahnung.zinsen || 0,
+    mahnGesamt: mahnung.gesamt,
+    notiz: mahnungText(mahnung.stufe, rechnung, mahnung)
+  };
+  druckeDokument(mahnungDoc, kunde, 'Mahnung');
+}
+
+function mahnungText(stufe, rechnung, mahnung) {
+  const stufenName = stufe === 1 ? 'Zahlungserinnerung' : stufe === 2 ? '1. Mahnung' : 'Letzte Mahnung';
+  return `${stufenName} für Rechnung ${rechnung.nr}\n` +
+    `Ursprünglicher Betrag: ${mahnung.gesamt} €\n` +
+    (mahnung.gebuehr ? `Mahngebühr: ${mahnung.gebuehr} €\n` : '') +
+    (mahnung.zinsen ? `Verzugszinsen: ${mahnung.zinsen} €\n` : '') +
+    `Neuer Gesamtbetrag: ${mahnung.gesamt} €`;
 }
 
 // Exportiere für globale Verfügbarkeit

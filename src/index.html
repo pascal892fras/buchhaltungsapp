@@ -174,7 +174,17 @@
         </div>
         <div class="grid2">
           <div><label>Bezeichnung (intern)</label><input type="text" id="rec-name" placeholder="z.B. Monatsretainer Müller"></div>
+          <div>
+            <label>Typ</label>
+            <select id="rec-typ" onchange="toggleRecurTypUI()">
+              <option value="einnahme">Einnahme (→ erstellt Rechnung)</option>
+              <option value="ausgabe">Ausgabe (→ bucht Ausgabe)</option>
+            </select>
+          </div>
+        </div>
+        <div id="rec-kunde-row" class="grid2">
           <div><label>Kunde</label><select id="rec-kunde"><option value="">— Kunde wählen —</option></select></div>
+          <div></div>
         </div>
         <div class="grid2">
           <div><label>Intervall</label>

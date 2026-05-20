@@ -29,6 +29,7 @@ import { applyDarkmode } from './modules/settings.js';
 import { getKategorienHtml } from './modules/kategorien.js';
 import { initializeCustomCategoryHandlers } from './modules/custom-categories.js';
 import { initializeSettingsTabs } from './modules/settings-tabs.js';
+import { checkFaelligeAusgaben } from './modules/wiederkehrend.js';
 
 // ─── KATEGORIEN INITIALISIEREN ──────────────────────────
 function initializeCategorySelects() {
@@ -58,6 +59,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Wende Dark Mode sofort an
     applyDarkmode(state.settings.darkmode === true);
+
+    // Prüfe fällige wiederkehrende Ausgaben und buche sie automatisch
+    checkFaelligeAusgaben();
 
     // Render Initial Dashboard
     updateDashboard();
