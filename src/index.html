@@ -339,208 +339,229 @@
     <!-- EINSTELLUNGEN -->
     <div class="section" id="sec-einstellungen">
       <div class="card">
-        <h3>Deine Daten (Briefkopf)</h3>
-        <div class="grid2">
-          <div><label>Name / Firmenname</label><input type="text" id="s-name"></div>
-          <div><label>Berufsbezeichnung</label><input type="text" id="s-beruf"></div>
-        </div>
-        <label>Adresse</label><textarea id="s-adresse" placeholder="Straße Nr.&#10;PLZ Ort&#10;Deutschland"></textarea>
-        <div class="grid2">
-          <div><label>Telefon</label><input type="text" id="s-tel"></div>
-          <div><label>E-Mail</label><input type="email" id="s-mail"></div>
-        </div>
-        <div class="grid2">
-          <div><label>Website</label><input type="text" id="s-web"></div>
-          <div><label>Steuernummer</label><input type="text" id="s-steuernr"></div>
-        </div>
-        <h3 style="margin-top:16px">Bankverbindung</h3>
-        <div class="grid2">
-          <div><label>Kontoinhaber</label><input type="text" id="s-kontoinhaber"></div>
-          <div><label>Bank</label><input type="text" id="s-bank"></div>
-        </div>
-        <div class="grid2">
-          <div><label>IBAN</label><input type="text" id="s-iban"></div>
-          <div><label>BIC</label><input type="text" id="s-bic"></div>
-        </div>
-        <h3 style="margin-top:16px">Logo / Branding</h3>
-        <label>Firmenlogo (erscheint in der Sidebar)</label>
-        <div style="margin-bottom:12px">
-          <div id="logo-preview" style="display:none;margin-bottom:8px;padding:12px;background:var(--bg);border-radius:var(--radius);text-align:center">
-            <img id="logo-preview-img" style="max-width:200px;max-height:80px;object-fit:contain">
-          </div>
-          <input type="file" id="logo-upload" accept="image/png,image/jpeg,image/jpg" style="display:none" onchange="handleLogoUpload(this)">
-          <div style="display:flex;gap:8px">
-            <button class="btn" onclick="document.getElementById('logo-upload').click()">Logo hochladen (PNG/JPG)</button>
-            <button class="btn btn-danger" onclick="loescheLogo()" id="btn-logo-delete" style="display:none">Logo entfernen</button>
-          </div>
-          <div style="font-size:11px;color:var(--hint);margin-top:4px">Empfohlene Größe: 200x80px (max. 5MB)</div>
+
+        <!-- TAB NAVIGATION -->
+        <div class="settings-tabs">
+          <button class="settings-tab active" data-tab="branding">🎨 Branding & Design</button>
+          <button class="settings-tab" data-tab="kontakt">👤 Kontakt & Finanzen</button>
+          <button class="settings-tab" data-tab="rechnungen">📄 Rechnungseinstellungen</button>
         </div>
 
-        <h3 style="margin-top:16px">Darstellung</h3>
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-          <input type="checkbox" id="s-darkmode" style="width:auto;margin:0" onchange="toggleDarkmode(this.checked)">
-          <span>Dark Mode aktivieren</span>
-        </label>
-        <div style="font-size:11px;color:var(--hint);margin-top:2px">Dunkles Farbschema für die gesamte App</div>
-
-        <h3 style="margin-top:16px">Rechnungseinstellungen</h3>
-        <div class="grid2">
-          <div><label>Rechnungsprefix</label><input type="text" id="s-prefix" value="RE" style="width:100px"></div>
-          <div><label>Angebotsnummernprefix</label><input type="text" id="s-angprefix" value="ANG" style="width:100px"></div>
-        </div>
-        <div class="grid2">
-          <div><label>Standard-Zahlungsziel (Tage)</label><input type="number" id="s-zahltage" value="14" style="width:100px"></div>
-        </div>
-        <label>Standard-Fußnote Rechnungen</label>
-        <textarea id="s-fussnote">Gemäß §19 UStG wird keine Umsatzsteuer ausgewiesen.</textarea>
-        <label>Standard-Fußnote Angebote</label>
-        <textarea id="s-angfussnote">Dieses Angebot ist freibleibend und unverbindlich. Preise in Euro, netto gemäß §19 UStG.</textarea>
-
-        <h3 style="margin-top:24px">📄 PDF-Template Anpassung</h3>
-        <p style="font-size:12px;color:var(--hint);margin-bottom:12px">Personalisieren Sie das Layout Ihrer Rechnungen und Angebote</p>
-
-        <h4 style="margin-top:16px;font-size:13px">Logo-Positionierung</h4>
-        <div class="grid2">
-          <div>
-            <label>Vertikale Position</label>
-            <select id="s-tpl-logo-pos-v">
-              <option value="top">Oben (Kopfbereich)</option>
-              <option value="bottom">Unten (Fußbereich)</option>
-            </select>
+        <!-- TAB 1: BRANDING & DESIGN -->
+        <div class="settings-tab-content active" id="tab-branding">
+          <h3>Deine Daten</h3>
+          <div class="grid2">
+            <div><label>Name / Firmenname</label><input type="text" id="s-name"></div>
+            <div><label>Berufsbezeichnung</label><input type="text" id="s-beruf"></div>
           </div>
-          <div>
-            <label>Horizontale Position</label>
-            <select id="s-tpl-logo-pos-h">
-              <option value="left">Links</option>
-              <option value="center">Mitte</option>
-              <option value="right">Rechts</option>
-            </select>
-          </div>
-        </div>
 
-        <h4 style="margin-top:16px;font-size:13px">Logo-Größe</h4>
-        <div>
-          <label>Logo Breite (px)</label>
-          <input type="number" id="s-tpl-logo-size" value="140" min="50" max="300" style="width:100px">
-          <span style="font-size:11px;color:var(--hint);margin-left:8px">Empfohlen: 100-200px</span>
-        </div>
+          <h3 style="margin-top:16px">Logo / Branding</h3>
+          <label>Firmenlogo (erscheint in der Sidebar)</label>
+          <div style="margin-bottom:12px">
+            <div id="logo-preview" style="display:none;margin-bottom:8px;padding:12px;background:var(--bg);border-radius:var(--radius);text-align:center">
+              <img id="logo-preview-img" style="max-width:200px;max-height:80px;object-fit:contain">
+            </div>
+            <input type="file" id="logo-upload" accept="image/png,image/jpeg,image/jpg" style="display:none" onchange="handleLogoUpload(this)">
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="document.getElementById('logo-upload').click()">Logo hochladen (PNG/JPG)</button>
+              <button class="btn btn-danger" onclick="loescheLogo()" id="btn-logo-delete" style="display:none">Logo entfernen</button>
+            </div>
+            <div style="font-size:11px;color:var(--hint);margin-top:4px">Empfohlene Größe: 200x80px (max. 5MB)</div>
+          </div>
 
-        <h4 style="margin-top:16px;font-size:13px">QR-Code (GiroCode)</h4>
-        <div>
-          <label>QR-Code Größe (px)</label>
-          <input type="number" id="s-tpl-qr-size" value="120" min="60" max="300" style="width:100px">
-          <span style="font-size:11px;color:var(--hint);margin-left:8px">Erscheint nur bei Rechnungen mit IBAN. Empfohlen: 100-150px</span>
-        </div>
+          <h3 style="margin-top:16px">Darstellung</h3>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="s-darkmode" style="width:auto;margin:0" onchange="toggleDarkmode(this.checked)">
+            <span>Dark Mode aktivieren</span>
+          </label>
+          <div style="font-size:11px;color:var(--hint);margin-top:2px">Dunkles Farbschema für die gesamte App</div>
 
-        <h4 style="margin-top:16px;font-size:13px">Farben</h4>
-        <div class="grid2">
-          <div>
-            <label>Farbe für Überschriften</label>
-            <input type="color" id="s-tpl-color-highlight" value="#000000">
+          <h3 style="margin-top:16px">PDF-Template: Logo & Tabellen</h3>
+          <h4 style="margin-top:12px;font-size:13px">Logo-Positionierung</h4>
+          <div class="grid2">
+            <div>
+              <label>Vertikale Position</label>
+              <select id="s-tpl-logo-pos-v">
+                <option value="top">Oben (Kopfbereich)</option>
+                <option value="bottom">Unten (Fußbereich)</option>
+              </select>
+            </div>
+            <div>
+              <label>Horizontale Position</label>
+              <select id="s-tpl-logo-pos-h">
+                <option value="left">Links</option>
+                <option value="center">Mitte</option>
+                <option value="right">Rechts</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label>Textfarbe</label>
-            <input type="color" id="s-tpl-color-text" value="#000000">
-          </div>
-        </div>
-        <div class="grid2">
-          <div>
-            <label>Tabellen-Rahmenfarbe</label>
-            <input type="color" id="s-tpl-color-table-border" value="#000000">
-          </div>
-          <div>
-            <label>Tabellen-Hintergrund (USt-Zeile)</label>
-            <input type="color" id="s-tpl-color-table-bg" value="#fef9e6">
-          </div>
-        </div>
-        <div class="grid2">
-          <div>
-            <label>PDF-Hintergrundfarbe (Rechnung/Angebot)</label>
-            <input type="color" id="s-tpl-color-bg" value="#ffffff">
-          </div>
-          <div></div>
-        </div>
 
-        <h4 style="margin-top:16px;font-size:13px">Tabellen-Design</h4>
-        <div>
-          <label>Tabellen-Stil</label>
-          <select id="s-tpl-table-style">
-            <option value="modern">Modern (dünne Linien)</option>
-            <option value="classic">Klassisch (dicke Linien)</option>
-            <option value="minimal">Minimal (ohne Rahmen)</option>
-          </select>
-        </div>
-
-        <h4 style="margin-top:16px;font-size:13px">Layout</h4>
-        <div class="grid2">
-          <div>
-            <label>Position Firmendaten</label>
-            <select id="s-tpl-company-pos">
-              <option value="top-left">Oben Links</option>
-              <option value="top-right">Oben Rechts</option>
-            </select>
+          <h4 style="margin-top:12px;font-size:13px">Logo-Größe & QR-Code</h4>
+          <div class="grid2">
+            <div>
+              <label>Logo Breite (px)</label>
+              <input type="number" id="s-tpl-logo-size" value="140" min="50" max="300">
+            </div>
+            <div>
+              <label>QR-Code Größe (px)</label>
+              <input type="number" id="s-tpl-qr-size" value="120" min="60" max="300">
+            </div>
           </div>
+
+          <h4 style="margin-top:12px;font-size:13px">Tabellen-Design</h4>
           <div>
-            <label>Position Kundendaten</label>
-            <select id="s-tpl-customer-pos">
-              <option value="left">Links</option>
-              <option value="right">Rechts</option>
+            <label>Tabellen-Stil</label>
+            <select id="s-tpl-table-style">
+              <option value="modern">Modern (dünne Linien)</option>
+              <option value="classic">Klassisch (dicke Linien)</option>
+              <option value="minimal">Minimal (ohne Rahmen)</option>
             </select>
           </div>
         </div>
-        <div>
-          <label>Bank-Details Position</label>
-          <select id="s-tpl-bank-details-pos">
-            <option value="footer">Im Fußbereich</option>
-            <option value="sidebar">In Seitenleiste</option>
-            <option value="none">Nicht anzeigen</option>
-          </select>
+
+        <!-- TAB 2: KONTAKT & FINANZEN -->
+        <div class="settings-tab-content" id="tab-kontakt">
+          <h3>Kontaktdaten</h3>
+          <div class="grid2">
+            <div><label>Telefon</label><input type="text" id="s-tel"></div>
+            <div><label>E-Mail</label><input type="email" id="s-mail"></div>
+          </div>
+          <div class="grid2">
+            <div><label>Website</label><input type="text" id="s-web"></div>
+            <div><label>Steuernummer</label><input type="text" id="s-steuernr"></div>
+          </div>
+
+          <h3 style="margin-top:16px">Adresse</h3>
+          <label>Vollständige Adresse (für Rechnungen)</label>
+          <textarea id="s-adresse" placeholder="Straße Nr.&#10;PLZ Ort&#10;Deutschland"></textarea>
+
+          <h3 style="margin-top:16px">Bankverbindung</h3>
+          <div class="grid2">
+            <div><label>Kontoinhaber</label><input type="text" id="s-kontoinhaber"></div>
+            <div><label>Bank</label><input type="text" id="s-bank"></div>
+          </div>
+          <div class="grid2">
+            <div><label>IBAN</label><input type="text" id="s-iban"></div>
+            <div><label>BIC</label><input type="text" id="s-bic"></div>
+          </div>
+          <p style="font-size:11px;color:var(--hint);margin-top:8px">⚠️ Diese Daten werden verschlüsselt gespeichert</p>
         </div>
 
-        <h4 style="margin-top:16px;font-size:13px">Texte</h4>
-        <div>
-          <label>Intro-Text (Begrüßung)</label>
-          <textarea id="s-tpl-intro-text" rows="3">Sehr geehrte Damen und Herren,
+        <!-- TAB 3: RECHNUNGSEINSTELLUNGEN -->
+        <div class="settings-tab-content" id="tab-rechnungen">
+          <h3>Rechnungseinstellungen</h3>
+          <div class="grid2">
+            <div><label>Rechnungsprefix</label><input type="text" id="s-prefix" value="RE" style="width:100px"></div>
+            <div><label>Angebotsnummernprefix</label><input type="text" id="s-angprefix" value="ANG" style="width:100px"></div>
+          </div>
+          <div class="grid2">
+            <div><label>Standard-Zahlungsziel (Tage)</label><input type="number" id="s-zahltage" value="14" style="width:100px"></div>
+          </div>
+          <label>Standard-Fußnote Rechnungen</label>
+          <textarea id="s-fussnote">Gemäß §19 UStG wird keine Umsatzsteuer ausgewiesen.</textarea>
+          <label>Standard-Fußnote Angebote</label>
+          <textarea id="s-angfussnote">Dieses Angebot ist freibleibend und unverbindlich. Preise in Euro, netto gemäß §19 UStG.</textarea>
+
+          <h3 style="margin-top:16px">PDF-Layout & Farben</h3>
+          <h4 style="margin-top:12px;font-size:13px">Farben</h4>
+          <div class="grid2">
+            <div>
+              <label>Farbe für Überschriften</label>
+              <input type="color" id="s-tpl-color-highlight" value="#000000">
+            </div>
+            <div>
+              <label>Textfarbe</label>
+              <input type="color" id="s-tpl-color-text" value="#000000">
+            </div>
+          </div>
+          <div class="grid2">
+            <div>
+              <label>Tabellen-Rahmenfarbe</label>
+              <input type="color" id="s-tpl-color-table-border" value="#000000">
+            </div>
+            <div>
+              <label>Tabellen-Hintergrund (USt-Zeile)</label>
+              <input type="color" id="s-tpl-color-table-bg" value="#fef9e6">
+            </div>
+          </div>
+          <div>
+            <label>PDF-Hintergrundfarbe</label>
+            <input type="color" id="s-tpl-color-bg" value="#ffffff" style="width:100px">
+          </div>
+
+          <h4 style="margin-top:16px;font-size:13px">Layout</h4>
+          <div class="grid2">
+            <div>
+              <label>Position Firmendaten</label>
+              <select id="s-tpl-company-pos">
+                <option value="top-left">Oben Links</option>
+                <option value="top-right">Oben Rechts</option>
+              </select>
+            </div>
+            <div>
+              <label>Position Kundendaten</label>
+              <select id="s-tpl-customer-pos">
+                <option value="left">Links</option>
+                <option value="right">Rechts</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label>Bank-Details Position</label>
+            <select id="s-tpl-bank-details-pos">
+              <option value="footer">Im Fußbereich</option>
+              <option value="sidebar">In Seitenleiste</option>
+              <option value="none">Nicht anzeigen</option>
+            </select>
+          </div>
+
+          <h4 style="margin-top:16px;font-size:13px">Texte</h4>
+          <div>
+            <label>Intro-Text (Begrüßung)</label>
+            <textarea id="s-tpl-intro-text" rows="3">Sehr geehrte Damen und Herren,
 
 vielen Dank für Ihren Auftrag und das damit verbundene Vertrauen!
 Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:</textarea>
-        </div>
-        <div>
-          <label>Grußformel</label>
-          <input type="text" id="s-tpl-greeting" value="Mit freundlichen Grüßen">
+          </div>
+          <div>
+            <label>Grußformel</label>
+            <input type="text" id="s-tpl-greeting" value="Mit freundlichen Grüßen">
+          </div>
+
+          <h3 style="margin-top:24px">Mahnungen</h3>
+          <p style="font-size:12px;color:var(--hint);margin-bottom:12px">Konfiguration der Mahnstufen</p>
+          <div class="grid2">
+            <div><label>Mahnungs-Prefix</label><input type="text" id="s-mahnung-prefix" value="M" style="width:100px"></div>
+            <div><label>Verzugszinsen p.a. (%)</label><input type="number" id="s-verzugszins" step="0.01" value="9.12" style="width:120px"></div>
+          </div>
+          <h4 style="margin-top:12px;font-size:13px">Mahngebühren (€)</h4>
+          <div class="grid3">
+            <div><label>Stufe 1 (Erinnerung)</label><input type="number" id="s-mahngebuehr-1" step="0.01" value="0"></div>
+            <div><label>Stufe 2 (1. Mahnung)</label><input type="number" id="s-mahngebuehr-2" step="0.01" value="5"></div>
+            <div><label>Stufe 3 (Letzte)</label><input type="number" id="s-mahngebuehr-3" step="0.01" value="10"></div>
+          </div>
+          <h4 style="margin-top:12px;font-size:13px">Zahlungsfristen (Tage)</h4>
+          <div class="grid3">
+            <div><label>Stufe 1</label><input type="number" id="s-mahnung-frist-1" value="7"></div>
+            <div><label>Stufe 2</label><input type="number" id="s-mahnung-frist-2" value="7"></div>
+            <div><label>Stufe 3</label><input type="number" id="s-mahnung-frist-3" value="7"></div>
+          </div>
+          <h4 style="margin-top:12px;font-size:13px">Textbausteine</h4>
+          <label>Stufe 1 – Zahlungserinnerung (freundlich)</label>
+          <textarea id="s-mahnung-text-1" rows="3"></textarea>
+          <label>Stufe 2 – Erste Mahnung (bestimmt)</label>
+          <textarea id="s-mahnung-text-2" rows="3"></textarea>
+          <label>Stufe 3 – Letzte Mahnung (streng)</label>
+          <textarea id="s-mahnung-text-3" rows="3"></textarea>
         </div>
 
-        <h3 style="margin-top:24px">Mahnungen</h3>
-        <p style="font-size:12px;color:var(--hint);margin-bottom:8px">Konfiguration der Mahnstufen (Mahngebühren, Verzugszinsen, Texte und Fristen)</p>
-        <div class="grid2">
-          <div><label>Mahnungs-Prefix</label><input type="text" id="s-mahnung-prefix" value="M" style="width:100px"></div>
-          <div><label>Verzugszinsen p.a. (%)</label><input type="number" id="s-verzugszins" step="0.01" value="9.12" style="width:120px"><span style="font-size:11px;color:var(--hint);margin-left:8px">Default: 9,12% (Geschäftskunden)</span></div>
-        </div>
-        <h4 style="margin-top:12px;font-size:13px">Mahngebühren (€)</h4>
-        <div class="grid3">
-          <div><label>Stufe 1 (Erinnerung)</label><input type="number" id="s-mahngebuehr-1" step="0.01" value="0"></div>
-          <div><label>Stufe 2 (1. Mahnung)</label><input type="number" id="s-mahngebuehr-2" step="0.01" value="5"></div>
-          <div><label>Stufe 3 (Letzte Mahnung)</label><input type="number" id="s-mahngebuehr-3" step="0.01" value="10"></div>
-        </div>
-        <h4 style="margin-top:12px;font-size:13px">Zahlungsfristen (Tage)</h4>
-        <div class="grid3">
-          <div><label>Stufe 1</label><input type="number" id="s-mahnung-frist-1" value="7"></div>
-          <div><label>Stufe 2</label><input type="number" id="s-mahnung-frist-2" value="7"></div>
-          <div><label>Stufe 3</label><input type="number" id="s-mahnung-frist-3" value="7"></div>
-        </div>
-        <h4 style="margin-top:12px;font-size:13px">Textbausteine</h4>
-        <label>Stufe 1 – Zahlungserinnerung (freundlich)</label>
-        <textarea id="s-mahnung-text-1" rows="3"></textarea>
-        <label>Stufe 2 – Erste Mahnung (bestimmt)</label>
-        <textarea id="s-mahnung-text-2" rows="3"></textarea>
-        <label>Stufe 3 – Letzte Mahnung (streng)</label>
-        <textarea id="s-mahnung-text-3" rows="3"></textarea>
-
-        <div style="margin-top:16px;display:flex;gap:8px">
+        <!-- SAVE BUTTONS (außerhalb Tabs) -->
+        <div style="margin-top:24px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:16px">
           <button class="btn btn-primary" onclick="speichernSettings()">Einstellungen speichern</button>
           <button class="btn" onclick="vorschauTemplate()">📄 Vorschau anzeigen</button>
         </div>
         <div id="s-confirm" style="display:none;margin-top:8px;font-size:12px;color:var(--success)">✓ Gespeichert</div>
+
       </div>
     </div>
 

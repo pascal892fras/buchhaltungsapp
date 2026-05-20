@@ -28,6 +28,7 @@ import { updateDashboard } from './modules/dashboard.js';
 import { applyDarkmode } from './modules/settings.js';
 import { getKategorienHtml } from './modules/kategorien.js';
 import { initializeCustomCategoryHandlers } from './modules/custom-categories.js';
+import { initializeSettingsTabs } from './modules/settings-tabs.js';
 
 // ─── KATEGORIEN INITIALISIEREN ──────────────────────────
 function initializeCategorySelects() {
@@ -67,6 +68,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Initialisiere Custom Category Handler
     initializeCustomCategoryHandlers();
+
+    // Initialisiere Settings Tabs
+    initializeSettingsTabs();
 
     // Lade Logo asynchron
     setTimeout(async () => {
