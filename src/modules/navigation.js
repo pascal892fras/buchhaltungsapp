@@ -86,5 +86,6 @@ export function updateKundeSelect(elementId) {
   if (!el) return;
 
   el.innerHTML = '<option value="">-- Kunde wählen --</option>' +
+    '<option value="__neu__">+ Neuer Kunde anlegen</option>' +
     state.data.kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('');
 }

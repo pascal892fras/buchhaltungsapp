@@ -77,6 +77,19 @@ export function druckeDokument(doc, kunde, typ) {
     </div>`;
   }
 
+  // Intro-Text und Grußformel aus Einstellungen
+  const introText = s.tpl_intro_text || 'Sehr geehrte Damen und Herren,<br><br>hiermit stellen wir Ihnen folgende Leistungen in Rechnung:';
+  const greeting = s.tpl_greeting || 'Mit freundlichen Grüßen';
+  const angebotIntro = 'Sehr geehrte Damen und Herren,<br><br>wir unterbreiten Ihnen folgendes Angebot:';
+
+  // Notiz/Fußnote
+  const notizText = istAngebot
+    ? (doc.notiz || s.angfussnote || '')
+    : (doc.notiz || s.fussnote || '');
+  const notizHtml = notizText
+    ? `<div style="margin-top:20px;font-size:9px;color:#666;white-space:pre-line">${notizText}</div>`
+    : '';
+
   const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${typ} ${doc.nr}</title><style>
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{background:${tplColorBg}}
@@ -94,7 +107,10 @@ export function druckeDokument(doc, kunde, typ) {
     <div class="absender-zeile">${absenderText}</div>
     <div class="logo-container">${logoImg}</div>
     <div style="margin:20px 0;font-size:10px"><strong>${kunde ? kunde.name : doc.kunde}</strong><br>${kundeAdresse[0] || ''}<br>${kundeAdresse[1] || ''}</div>
-    <div style="margin:30px 0 20px 0;text-align:right"><strong>${datumFormatiert}</strong></div>
+    <div style="margin:30px 0 10px 0;text-align:right"><strong>${datumFormatiert}</strong></div>
+    <h1 style="font-size:16px;color:${tplColorHighlight};margin:20px 0 5px 0">${typ} ${doc.nr}</h1>
+    ${!istAngebot ? `<div style="font-size:9px;color:#666;margin-bottom:15px">Fällig am: ${faelligFormatiert}</div>` : ''}
+    <div style="font-size:10px;margin:15px 0 20px 0;line-height:1.6">${istAngebot ? angebotIntro : introText}</div>
     <table class="positionen">
       <thead><tr>
         <th></th><th>Beschreibung</th><th style="text-align:right;width:80px">Menge</th><th style="text-align:right;width:100px">Einzelpreis</th><th style="text-align:right;width:100px">Gesamtpreis</th>
@@ -106,6 +122,8 @@ export function druckeDokument(doc, kunde, typ) {
       <tr><td colspan="2">Umsatzsteuer nicht erhoben gemäß §19 UStG.</td></tr>
       <tr><td><strong>Gesamtbetrag brutto</strong></td><td style="text-align:right"><strong>${fmtEUR(doc.gesamt)}</strong></td></tr>
     </table></div>
+    ${notizHtml}
+    <div style="margin-top:30px;font-size:10px">${greeting}<br><br><strong>${s.name || ''}</strong></div>
     ${qrCodeHtml}
     ${bankFooterHtml}
   </body></html>`;

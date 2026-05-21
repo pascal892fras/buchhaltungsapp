@@ -110,10 +110,10 @@ export function angebotZuRechnung(id) {
   const a = state.data.angebote.find(x => x.id == id);
   if (!a) return;
 
-  a.status = 'angenommen';
+  // Status wird NICHT sofort gesetzt – erst wenn die Rechnung wirklich gespeichert wird
   showSection('rechnungen', document.querySelectorAll('.nav-item')[2]);
-  window.showRechnungForm({ positionen: a.positionen, kundeId: a.kundeId, notiz: state.settings.fussnote });
-  toast('Angebot in Rechnung übernommen');
+  window.showRechnungForm({ positionen: a.positionen, kundeId: a.kundeId, notiz: state.settings.fussnote, ausAngebotId: a.id });
+  toast('Angebot übernommen – bitte Kunde wählen und speichern');
 }
 
 export function loescheAngebot(id) {

@@ -105,6 +105,21 @@ export async function handleUpload(input) {
       throw new Error('Datei zu groß – max 5MB');
     }
 
+    // Vorschau anzeigen
+    const vorschauEl = document.getElementById('beleg-vorschau');
+    const vorschauImg = document.getElementById('beleg-vorschau-img');
+    const vorschauInfo = document.getElementById('beleg-vorschau-info');
+    if (vorschauEl && vorschauImg) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        vorschauImg.src = e.target.result;
+        vorschauEl.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+      const sizeKB = (file.size / 1024).toFixed(1);
+      vorschauInfo.innerHTML = `${file.name}<br>${sizeKB} KB`;
+    }
+
     // Starte OCR
     statusEl.innerHTML = '<div class="spinner" style="margin-right:8px;display:inline-block"></div> Lade Tesseract.js... (beim ersten Mal ~2-5 Min)';
     const worker = await initOCRWorker();
@@ -275,6 +290,11 @@ export function resetUpload() {
   if (ocrResult) ocrResult.style.display = 'none';
   const aiStatus = document.getElementById('ai-status');
   if (aiStatus) aiStatus.style.display = 'none';
+  // Vorschau zurücksetzen
+  const vorschau = document.getElementById('beleg-vorschau');
+  if (vorschau) vorschau.style.display = 'none';
+  const vorschauImg = document.getElementById('beleg-vorschau-img');
+  if (vorschauImg) vorschauImg.src = '';
 }
 
 window.showAusgabeForm = showAusgabeForm;

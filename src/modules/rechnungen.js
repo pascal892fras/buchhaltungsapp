@@ -12,6 +12,7 @@ import { validateRechnung } from './validation.js';
 
 let rPosC = 0;
 let _mahnungContext = null;
+let _ausAngebotId = null;  // Referenz zum Angebot das gerade in Rechnung umgewandelt wird
 
 // ─── RECHNUNGEN ──────────────────────────────────────────
 export function addRPos() {
@@ -26,6 +27,9 @@ export function showRechnungForm(prefill) {
   document.getElementById('rechnung-liste').style.display = 'none';
   const form = document.getElementById('rechnung-form');
   form.style.display = 'block';
+
+  // Angebots-Referenz merken
+  _ausAngebotId = prefill?.ausAngebotId || null;
 
   // Versuche Draft zu laden
   if (!prefill && loadFormDraft('rechnung-form')) {
@@ -64,6 +68,8 @@ export function showRechnungForm(prefill) {
 }
 
 export function hideRechnungForm() {
+  // Wenn aus Angebot abgebrochen → Angebot bleibt 'offen'
+  _ausAngebotId = null;
   document.getElementById('rechnung-liste').style.display = 'block';
   document.getElementById('rechnung-form').style.display = 'none';
 }
@@ -72,6 +78,11 @@ export function speichernRechnung(pdf) {
   const kid = document.getElementById('r-kunde').value;
   const kobj = state.data.kunden.find((k) => k.id == kid);
   const pos = getPositionen('r-positionen');
+
+  // Warnung wenn kein Kunde, aber trotzdem erlauben
+  if (!kid && !confirm('Kein Kunde ausgewählt. Rechnung trotzdem speichern?')) {
+    return;
+  }
 
   const r = {
     id: Date.now().toString(),
@@ -97,6 +108,14 @@ export function speichernRechnung(pdf) {
   }
 
   state.data.rechnungen.push(r);
+
+  // Angebot-Status auf 'angenommen' setzen (erst jetzt, beim tatsächlichen Speichern)
+  if (_ausAngebotId) {
+    const ang = state.data.angebote.find(a => a.id == _ausAngebotId);
+    if (ang) ang.status = 'angenommen';
+    _ausAngebotId = null;
+  }
+
   saveData();
   clearFormDraft('rechnung-form');
 
@@ -334,6 +353,69 @@ function mahnungText(stufe, rechnung, mahnung) {
     `Neuer Gesamtbetrag: ${mahnung.gesamt} €`;
 }
 
+// ─── INLINE NEUKUNDE ─────────────────────────────────────
+export function handleKundeSelect(selectEl) {
+  const form = document.getElementById('r-neukunde-form');
+  if (selectEl.value === '__neu__') {
+    form.style.display = 'block';
+    document.getElementById('r-nk-name').focus();
+  } else {
+    form.style.display = 'none';
+  }
+}
+
+export function hideInlineNeukunde() {
+  document.getElementById('r-neukunde-form').style.display = 'none';
+  document.getElementById('r-kunde').value = '';
+}
+
+export function speichernInlineNeukunde() {
+  const name = document.getElementById('r-nk-name').value.trim();
+  if (!name) {
+    toast('Bitte Name/Firma eingeben');
+    return;
+  }
+
+  // Kunden-Nummer: manuell oder automatisch
+  let kundennummer = document.getElementById('r-nk-kundennr').value.trim();
+  if (!kundennummer) {
+    kundennummer = 'K-' + String(state.data.kunden.length + 1).padStart(3, '0');
+  }
+
+  const neuerKunde = {
+    id: Date.now().toString(),
+    kundennummer,
+    name,
+    kontakt: document.getElementById('r-nk-kontakt').value.trim(),
+    mail: document.getElementById('r-nk-mail').value.trim(),
+    tel: document.getElementById('r-nk-tel').value.trim(),
+    adresse: document.getElementById('r-nk-adresse').value.trim(),
+  };
+
+  // In Kundendatenbank speichern
+  state.data.kunden.push(neuerKunde);
+  saveData();
+
+  // Select aktualisieren und neuen Kunden auswählen
+  const select = document.getElementById('r-kunde');
+  const option = document.createElement('option');
+  option.value = neuerKunde.id;
+  option.textContent = neuerKunde.name;
+  select.appendChild(option);
+  select.value = neuerKunde.id;
+
+  // Formular ausblenden und alle Felder leeren
+  document.getElementById('r-neukunde-form').style.display = 'none';
+  document.getElementById('r-nk-kundennr').value = '';
+  document.getElementById('r-nk-name').value = '';
+  document.getElementById('r-nk-kontakt').value = '';
+  document.getElementById('r-nk-mail').value = '';
+  document.getElementById('r-nk-tel').value = '';
+  document.getElementById('r-nk-adresse').value = '';
+
+  toast(`Kunde "${name}" (${kundennummer}) angelegt ✓`);
+}
+
 // Exportiere für globale Verfügbarkeit
 window.addRPos = addRPos;
 window.calcR = calcR;
@@ -346,3 +428,6 @@ window.druckeDokumentById = druckeDokumentById;
 window.showMahnungModal = showMahnungModal;
 window.hideMahnungModal = hideMahnungModal;
 window.erstelleMahnung = erstelleMahnung;
+window.handleKundeSelect = handleKundeSelect;
+window.hideInlineNeukunde = hideInlineNeukunde;
+window.speichernInlineNeukunde = speichernInlineNeukunde;
