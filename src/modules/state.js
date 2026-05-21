@@ -103,52 +103,13 @@ export async function saveData() {
 export async function loadSettings() {
   const loaded = await window.api.loadSettings();
   if (loaded && Object.keys(loaded).length) {
-    // Entschlüssele sensitive Felder
-    if (loaded.iban && typeof loaded.iban === 'string' && loaded.iban.includes('=')) {
-      try {
-        loaded.iban = await window.api.decryptData(loaded.iban);
-      } catch (e) {
-        console.warn('IBAN-Entschlüsselung fehlgeschlagen:', e);
-      }
-    }
-
-    if (loaded.bic && typeof loaded.bic === 'string' && loaded.bic.includes('=')) {
-      try {
-        loaded.bic = await window.api.decryptData(loaded.bic);
-      } catch (e) {
-        console.warn('BIC-Entschlüsselung fehlgeschlagen:', e);
-      }
-    }
-
     Object.assign(state.settings, loaded);
   }
   return state.settings;
 }
 
 export async function saveSettings() {
-  // Erstelle Kopie um Original nicht zu mutieren
-  const toSave = JSON.parse(JSON.stringify(state.settings));
-
-  // Verschlüssele sensitive Felder
-  if (toSave.iban && toSave.iban.trim() !== '') {
-    try {
-      toSave.iban = await window.api.encryptData(toSave.iban);
-    } catch (e) {
-      console.error('IBAN-Verschlüsselung fehlgeschlagen:', e);
-      throw new Error('Sicherheitsfehler: IBAN konnte nicht gespeichert werden');
-    }
-  }
-
-  if (toSave.bic && toSave.bic.trim() !== '') {
-    try {
-      toSave.bic = await window.api.encryptData(toSave.bic);
-    } catch (e) {
-      console.error('BIC-Verschlüsselung fehlgeschlagen:', e);
-      throw new Error('Sicherheitsfehler: BIC konnte nicht gespeichert werden');
-    }
-  }
-
-  await window.api.saveSettings(toSave);
+  await window.api.saveSettings(state.settings);
 }
 
 export async function loadLogo() {

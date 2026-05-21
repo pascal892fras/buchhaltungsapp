@@ -4,7 +4,6 @@
 
 import { state, saveSettings, loadLogo, saveLogo } from './state.js';
 import { toast, toBase64 } from './helpers.js';
-import { encryptSettings, decryptSettings, maskIBAN } from './encryption.js';
 
 export async function speichernSettings() {
   // Firmendaten
@@ -12,16 +11,6 @@ export async function speichernSettings() {
     const el = document.getElementById('s-' + k);
     if (el) state.settings[k] = el.value;
   });
-
-  // ✅ API-Keys
-  const anthropicKey = document.getElementById('s-anthropic-api-key');
-  if (anthropicKey) {
-    const apiKey = anthropicKey.value.trim();
-    if (apiKey) {
-      localStorage.setItem('anthropic_api_key', apiKey);
-      toast('✅ Anthropic API-Key gespeichert');
-    }
-  }
 
   state.settings.zahltage = parseInt(document.getElementById('s-zahltage').value) || 14;
 
@@ -32,14 +21,15 @@ export async function speichernSettings() {
     applyDarkmode(state.settings.darkmode);
   }
 
-  // Template-Einstellungen
+  // Template-Einstellungen (IDs nutzen Bindestriche im HTML)
   [
     'tpl_logo_pos_v', 'tpl_logo_pos_h', 'tpl_logo_size', 'tpl_qr_size',
     'tpl_color_highlight', 'tpl_color_text', 'tpl_color_table_border', 'tpl_color_table_bg', 'tpl_color_bg',
     'tpl_table_style', 'tpl_company_pos', 'tpl_customer_pos', 'tpl_bank_details_pos',
     'tpl_intro_text', 'tpl_intro_text_angebot', 'tpl_greeting'
   ].forEach(k => {
-    const el = document.getElementById('s-' + k);
+    const htmlId = 's-' + k.replace(/_/g, '-');
+    const el = document.getElementById(htmlId);
     if (el) state.settings[k] = el.value;
   });
 
@@ -52,7 +42,8 @@ export async function speichernSettings() {
   ];
 
   mahnSettings.forEach(k => {
-    const el = document.getElementById('s-' + k);
+    const htmlId = 's-' + k.replace(/_/g, '-');
+    const el = document.getElementById(htmlId);
     if (el) {
       if (k.includes('pct') || k.includes('gebuehr')) {
         state.settings[k] = parseFloat(el.value) || 0;
@@ -64,7 +55,6 @@ export async function speichernSettings() {
     }
   });
 
-  state.settings = encryptSettings(state.settings);
   await saveSettings();
   const c = document.getElementById('s-confirm');
   if (c) {
@@ -75,18 +65,6 @@ export async function speichernSettings() {
 }
 
 export async function ladeSettings() {
-  // Entschlüssele sensible Daten
-  state.settings = decryptSettings(state.settings);
-
-  // ✅ API-Keys laden
-  const anthropicKey = document.getElementById('s-anthropic-api-key');
-  if (anthropicKey) {
-    const storedKey = localStorage.getItem('anthropic_api_key');
-    if (storedKey) {
-      anthropicKey.value = storedKey;
-    }
-  }
-
   // Firmendaten
   ['name', 'beruf', 'adresse', 'tel', 'mail', 'web', 'steuernr', 'bank', 'kontoinhaber', 'iban', 'bic', 'fussnote', 'angfussnote', 'prefix', 'angprefix'].forEach(k => {
     const el = document.getElementById('s-' + k);
@@ -101,7 +79,7 @@ export async function ladeSettings() {
   const darkEl = document.getElementById('s-darkmode');
   if (darkEl) darkEl.checked = state.settings.darkmode === true;
 
-  // Template-Einstellungen laden
+  // Template-Einstellungen laden (IDs nutzen Bindestriche)
   const tplKeys = [
     'tpl_logo_pos_v', 'tpl_logo_pos_h', 'tpl_logo_size', 'tpl_qr_size',
     'tpl_color_highlight', 'tpl_color_text', 'tpl_color_table_border', 'tpl_color_table_bg', 'tpl_color_bg',
@@ -110,7 +88,8 @@ export async function ladeSettings() {
   ];
 
   tplKeys.forEach(k => {
-    const el = document.getElementById('s-' + k);
+    const htmlId = 's-' + k.replace(/_/g, '-');
+    const el = document.getElementById(htmlId);
     if (el && state.settings[k]) el.value = state.settings[k];
   });
 
