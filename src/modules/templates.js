@@ -80,7 +80,7 @@ export function druckeDokument(doc, kunde, typ) {
   // Intro-Text und Grußformel aus Einstellungen
   const introText = s.tpl_intro_text || 'Sehr geehrte Damen und Herren,<br><br>hiermit stellen wir Ihnen folgende Leistungen in Rechnung:';
   const greeting = s.tpl_greeting || 'Mit freundlichen Grüßen';
-  const angebotIntro = 'Sehr geehrte Damen und Herren,<br><br>wir unterbreiten Ihnen folgendes Angebot:';
+  const angebotIntro = s.tpl_intro_text_angebot || 'Sehr geehrte Damen und Herren,<br><br>wir unterbreiten Ihnen folgendes Angebot:';
 
   // Notiz/Fußnote
   const notizText = istAngebot

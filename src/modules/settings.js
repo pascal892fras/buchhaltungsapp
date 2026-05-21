@@ -37,7 +37,7 @@ export async function speichernSettings() {
     'tpl_logo_pos_v', 'tpl_logo_pos_h', 'tpl_logo_size', 'tpl_qr_size',
     'tpl_color_highlight', 'tpl_color_text', 'tpl_color_table_border', 'tpl_color_table_bg', 'tpl_color_bg',
     'tpl_table_style', 'tpl_company_pos', 'tpl_customer_pos', 'tpl_bank_details_pos',
-    'tpl_intro_text', 'tpl_greeting'
+    'tpl_intro_text', 'tpl_intro_text_angebot', 'tpl_greeting'
   ].forEach(k => {
     const el = document.getElementById('s-' + k);
     if (el) state.settings[k] = el.value;
@@ -106,7 +106,7 @@ export async function ladeSettings() {
     'tpl_logo_pos_v', 'tpl_logo_pos_h', 'tpl_logo_size', 'tpl_qr_size',
     'tpl_color_highlight', 'tpl_color_text', 'tpl_color_table_border', 'tpl_color_table_bg', 'tpl_color_bg',
     'tpl_table_style', 'tpl_company_pos', 'tpl_customer_pos', 'tpl_bank_details_pos',
-    'tpl_intro_text', 'tpl_greeting'
+    'tpl_intro_text', 'tpl_intro_text_angebot', 'tpl_greeting'
   ];
 
   tplKeys.forEach(k => {
